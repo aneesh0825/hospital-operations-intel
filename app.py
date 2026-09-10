@@ -14,7 +14,7 @@ from src.predict_readmission import (
 
 st.set_page_config(
     page_title="Admitra | Hospital Intelligence",
-    page_icon="🏥",
+    page_icon="A",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -216,7 +216,7 @@ label:has(input:checked) {
 
 
 /* ==========================================================
-   PAGE HERO
+   HERO
 ========================================================== */
 
 .page-hero {
@@ -349,7 +349,7 @@ label:has(input:checked) {
 
 
 /* ==========================================================
-   PANEL CARD
+   PANEL
 ========================================================== */
 
 .panel-card {
@@ -530,6 +530,7 @@ div[data-testid="stDataFrame"] {
 
 @st.cache_data
 def load_registry():
+
     return pd.read_csv(
         "data/processed/admitra_patient_registry.csv"
     )
@@ -543,39 +544,36 @@ registry = load_registry()
 # ============================================================
 
 def short_patient_id(patient_id):
-    return "P-" + str(patient_id)[-6:].upper()
+
+    return (
+        "P-"
+        + str(patient_id)[-6:].upper()
+    )
 
 
 def short_encounter_id(encounter_id):
-    return "E-" + str(encounter_id)[-6:].upper()
+
+    return (
+        "E-"
+        + str(encounter_id)[-6:].upper()
+    )
 
 
-def condition_summary(row):
+def safe_number(
+    value,
+    fallback,
+):
 
-    conditions = []
+    if pd.isna(value):
+        return fallback
 
-    if row.get("heart_failure", 0) == 1:
-        conditions.append("Heart Failure")
-
-    if row.get("kidney_disease", 0) == 1:
-        conditions.append("Kidney Disease")
-
-    if row.get("diabetes", 0) == 1:
-        conditions.append("Diabetes")
-
-    if row.get("hypertension", 0) == 1:
-        conditions.append("Hypertension")
-
-    if row.get("chronic_lung_disease", 0) == 1:
-        conditions.append("Chronic Lung Disease")
-
-    if not conditions:
-        return "None flagged"
-
-    return ", ".join(conditions)
+    return value
 
 
-def section_header(title, description):
+def section_header(
+    title,
+    description,
+):
 
     st.markdown(
         f'<div class="section-title">{title}</div>',
@@ -588,7 +586,11 @@ def section_header(title, description):
     )
 
 
-def page_header(kicker, title, description):
+def page_header(
+    kicker,
+    title,
+    description,
+):
 
     st.markdown(
         (
@@ -621,180 +623,235 @@ def metric_card(
     )
 
 
-def render_drivers(drivers):
+def condition_summary(row):
+
+    conditions = []
+
+    if row.get("diabetes", 0) == 1:
+        conditions.append("Diabetes")
+
+    if row.get("hypertension", 0) == 1:
+        conditions.append("Hypertension")
+
+    if row.get("kidney_disease", 0) == 1:
+        conditions.append("Kidney Disease")
+
+    if not conditions:
+        return "None flagged"
+
+    return ", ".join(
+        conditions
+    )
+
+
+# ============================================================
+# DRIVER EXPLANATIONS
+# ============================================================
+
+def render_drivers(
+    drivers,
+):
 
     explanations = {
-        "Previous inpatient admissions":
-            "This patient's history of prior hospitalizations was an important signal in the model's estimate of future readmission risk.",
+        "Admissions in last 30 days":
+            "Very recent hospitalization history can indicate an active pattern of repeated inpatient care.",
 
-        "Previous emergency visits":
-            "Prior emergency department use contributed to the prediction as part of the patient's recent healthcare utilization pattern.",
+        "Admissions in last 90 days":
+            "Recent inpatient utilization is one of the strongest signals associated with 30-day readmission in this model.",
+
+        "Admissions in last 365 days":
+            "Repeated hospital admissions over the previous year indicate a sustained pattern of inpatient utilization.",
+
+        "Prior readmissions in last 365 days":
+            "Previous confirmed readmissions provide direct evidence of a recent pattern of returning to inpatient care.",
+
+        "Days since last inpatient admission":
+            "A more recent prior hospitalization can increase modeled readmission risk because the patient returned to inpatient care within a shorter interval.",
+
+        "Prior inpatient history":
+            "The model considers whether the patient has any documented inpatient history before the current encounter.",
+
+        "Previous inpatient admissions":
+            "The patient's cumulative history of inpatient admissions contributes additional context about long-term healthcare utilization.",
 
         "Condition burden":
-            "The number of documented health conditions contributed to the model's estimate of overall clinical complexity.",
+            "The number of documented health conditions contributes to the model's estimate of overall clinical complexity.",
 
         "Procedure count":
-            "The number of recorded procedures contributed to the model's estimate of treatment complexity during this encounter.",
-
-        "Heart rate":
-            "This heart rate influenced the prediction based on patterns the model learned from similar encounters.",
-
-        "BMI":
-            "This BMI contributed to the prediction based on patterns observed in the model's training data.",
-
-        "Heart failure":
-            "Heart failure status influenced the prediction when considered alongside the patient's other characteristics.",
-
-        "Kidney disease":
-            "Kidney disease status contributed to the patient's modeled clinical risk profile.",
-
-        "Diabetes":
-            "Diabetes status contributed to the patient's modeled clinical risk profile.",
-
-        "Hypertension":
-            "Hypertension status contributed to the prediction as part of the patient's broader clinical profile.",
-
-        "Chronic lung disease":
-            "Chronic lung disease status contributed to the model's estimate of clinical complexity.",
-
-        "Length of stay":
-            "The duration of this hospitalization influenced the prediction based on patterns learned from prior encounters.",
+            "The number of procedures contributes information about the complexity of the patient's recent course of care.",
 
         "Medication count":
-            "The number of medications contributed to the model's estimate of treatment and clinical complexity.",
+            "The number of medications contributes information about treatment complexity.",
 
         "Age":
-            "The patient's age influenced the prediction based on patterns learned across different age groups.",
+            "Age contributes to the prediction based on patterns learned across patients of different ages.",
 
-        "Respiratory rate":
-            "This respiratory rate influenced the prediction based on patterns observed in similar encounters.",
+        "Length of stay":
+            "The duration of the current hospitalization contributes to the model's assessment of the encounter.",
 
-        "Glucose":
-            "This glucose measurement contributed to the prediction as part of the available clinical information.",
+        "Diabetes":
+            "Diabetes status contributes to the patient's overall clinical profile.",
 
-        "Systolic blood pressure":
-            "This systolic blood pressure measurement contributed to the prediction based on patterns learned by the model.",
+        "Hypertension":
+            "Hypertension status contributes to the patient's overall clinical profile.",
 
-        "Diastolic blood pressure":
-            "This diastolic blood pressure measurement contributed to the prediction based on patterns learned by the model.",
+        "Kidney disease":
+            "Kidney disease status contributes to the patient's overall clinical profile.",
 
-        "Previous encounters":
-            "The patient's prior healthcare encounters contributed to the model's estimate of readmission risk.",
+        "BMI":
+            "BMI contributes to the prediction based on patterns observed across the synthetic training population.",
     }
 
+
     units = {
-        "Previous inpatient admissions":
-            "prior admissions",
-
-        "Previous emergency visits":
-            "ED visits",
-
-        "Previous encounters":
-            "prior encounters",
-
-        "Condition burden":
-            "documented conditions",
-
-        "Procedure count":
-            "procedures",
-
-        "Medication count":
-            "medications",
-
-        "Heart rate":
-            "bpm",
+        "Age":
+            "years",
 
         "Length of stay":
             "days",
 
-        "Age":
-            "years",
+        "Previous inpatient admissions":
+            "prior admissions",
 
-        "Respiratory rate":
-            "breaths/min",
+        "Admissions in last 30 days":
+            "admissions",
 
-        "Glucose":
-            "mg/dL",
+        "Admissions in last 90 days":
+            "admissions",
 
-        "Systolic blood pressure":
-            "mmHg",
+        "Admissions in last 365 days":
+            "admissions",
 
-        "Diastolic blood pressure":
-            "mmHg",
+        "Days since last inpatient admission":
+            "days",
 
-        "BMI":
-            "",
+        "Prior readmissions in last 365 days":
+            "prior readmissions",
+
+        "Condition burden":
+            "documented conditions",
+
+        "Medication count":
+            "medications",
+
+        "Procedure count":
+            "procedures",
     }
+
 
     binary_features = {
-        "Heart failure",
-        "Kidney disease",
+        "Prior inpatient history",
         "Diabetes",
         "Hypertension",
-        "Chronic lung disease",
+        "Kidney disease",
     }
+
 
     for driver in drivers:
 
-        feature = driver["feature"]
-        direction = driver["direction"]
+        feature = driver[
+            "feature"
+        ]
+
+        direction = driver[
+            "direction"
+        ]
+
 
         if direction == "increases risk":
 
-            direction_class = "driver-up"
-            direction_label = "↑ PUSHED PREDICTION HIGHER"
+            direction_class = (
+                "driver-up"
+            )
+
+            direction_label = (
+                "↑ PUSHED PREDICTION HIGHER"
+            )
 
         elif direction == "decreases risk":
 
-            direction_class = "driver-down"
-            direction_label = "↓ PUSHED PREDICTION LOWER"
+            direction_class = (
+                "driver-down"
+            )
+
+            direction_label = (
+                "↓ PUSHED PREDICTION LOWER"
+            )
 
         else:
 
             direction_class = ""
-            direction_label = "NEUTRAL"
 
-        raw_value = driver["value"]
+            direction_label = (
+                "NEUTRAL"
+            )
+
+
+        raw_value = driver[
+            "value"
+        ]
+
 
         if feature in binary_features:
 
             try:
+
                 display_value = (
                     "Present"
-                    if float(raw_value) == 1
+                    if float(
+                        raw_value
+                    ) == 1
                     else "Not present"
                 )
+
             except Exception:
-                display_value = str(raw_value)
+
+                display_value = str(
+                    raw_value
+                )
 
         else:
 
             try:
+
                 number = round(
-                    float(raw_value),
+                    float(
+                        raw_value
+                    ),
                     1,
                 )
+
             except Exception:
-                number = raw_value
+
+                number = (
+                    raw_value
+                )
+
 
             unit = units.get(
                 feature,
                 "",
             )
 
+
             if unit:
+
                 display_value = (
                     f"{number} {unit}"
                 )
+
             else:
+
                 display_value = str(
                     number
                 )
+
 
         explanation = explanations.get(
             feature,
             "This factor influenced the prediction based on patterns learned by the model.",
         )
+
 
         st.markdown(
             (
@@ -819,6 +876,10 @@ def render_drivers(drivers):
         )
 
 
+# ============================================================
+# FACTOR DEFINITIONS
+# ============================================================
+
 def factor_definitions():
 
     with st.expander(
@@ -827,44 +888,44 @@ def factor_definitions():
 
         st.markdown(
             """
+**Admissions in last 30 days**  
+The number of inpatient hospital admissions recorded during the 30 days before the current hospitalization.
+
+**Admissions in last 90 days**  
+The number of inpatient hospital admissions recorded during the 90 days before the current hospitalization.
+
+**Admissions in last 365 days**  
+The number of inpatient hospital admissions recorded during the year before the current hospitalization.
+
+**Prior readmissions in last 365 days**  
+The number of earlier hospitalizations during the previous year that were followed by another inpatient admission within 30 days.
+
+**Days since last inpatient admission**  
+The number of days between the patient's most recent prior inpatient admission and the current hospitalization.
+
+**Prior inpatient history**  
+Indicates whether the patient had any inpatient hospitalization before the current encounter.
+
 **Previous inpatient admissions**  
-The number of hospital admissions recorded before the current encounter.
-
-**Previous emergency visits**  
-The number of prior emergency department visits recorded for the patient.
-
-**Previous encounters**  
-The total number of prior healthcare encounters available in the patient's history.
+The patient's cumulative number of inpatient admissions before the current hospitalization.
 
 **Condition burden**  
-The total number of documented health conditions associated with the patient.
+The number of documented health conditions associated with the patient.
 
 **Procedure count**  
-The number of procedures recorded during the hospitalization or recent course of care represented by the encounter.
+The number of procedures associated with the patient's hospitalization and available treatment record.
 
 **Medication count**  
-The number of medications associated with the patient's treatment record.
+The number of medications represented in the patient's available treatment record.
 
 **Length of stay**  
 The number of days the patient remained hospitalized during the current encounter.
 
+**Age**  
+The patient's age at the time of admission.
+
 **BMI**  
-Body mass index, a measurement calculated from height and weight.
-
-**Heart rate**  
-The patient's measured heart rate in beats per minute.
-
-**Respiratory rate**  
-The patient's measured number of breaths per minute.
-
-**Systolic blood pressure**  
-The upper blood pressure measurement, representing pressure when the heart contracts.
-
-**Diastolic blood pressure**  
-The lower blood pressure measurement, representing pressure when the heart relaxes.
-
-**Glucose**  
-The patient's recorded blood glucose measurement.
+Body mass index, a measure calculated from height and weight.
 
 **Diabetes**  
 Whether diabetes is documented in the patient's available clinical history.
@@ -872,20 +933,105 @@ Whether diabetes is documented in the patient's available clinical history.
 **Hypertension**  
 Whether hypertension is documented in the patient's available clinical history.
 
-**Heart failure**  
-Whether heart failure is documented in the patient's available clinical history.
-
 **Kidney disease**  
 Whether kidney disease is documented in the patient's available clinical history.
-
-**Chronic lung disease**  
-Whether chronic lung disease is documented in the patient's available clinical history.
 """
         )
 
 
 # ============================================================
-# REGISTRY EXAMPLES
+# PATIENT DATA HELPER
+# ============================================================
+
+def row_to_model_input(
+    row,
+):
+
+    return {
+        "age_at_admission":
+            row[
+                "age_at_admission"
+            ],
+
+        "length_of_stay":
+            row[
+                "length_of_stay"
+            ],
+
+        "previous_inpatient_admissions":
+            row[
+                "previous_inpatient_admissions"
+            ],
+
+        "admissions_last_30_days":
+            row[
+                "admissions_last_30_days"
+            ],
+
+        "admissions_last_90_days":
+            row[
+                "admissions_last_90_days"
+            ],
+
+        "admissions_last_365_days":
+            row[
+                "admissions_last_365_days"
+            ],
+
+        "days_since_last_inpatient_admission":
+            row[
+                "days_since_last_inpatient_admission"
+            ],
+
+        "has_prior_inpatient_admission":
+            row[
+                "has_prior_inpatient_admission"
+            ],
+
+        "prior_readmissions_last_365_days":
+            row[
+                "prior_readmissions_last_365_days"
+            ],
+
+        "condition_count":
+            row[
+                "condition_count"
+            ],
+
+        "medication_count":
+            row[
+                "medication_count"
+            ],
+
+        "procedure_count":
+            row[
+                "procedure_count"
+            ],
+
+        "diabetes":
+            row[
+                "diabetes"
+            ],
+
+        "hypertension":
+            row[
+                "hypertension"
+            ],
+
+        "kidney_disease":
+            row[
+                "kidney_disease"
+            ],
+
+        "bmi":
+            row[
+                "bmi"
+            ],
+    }
+
+
+# ============================================================
+# PRESET EXAMPLES
 # ============================================================
 
 def get_registry_example(
@@ -894,9 +1040,12 @@ def get_registry_example(
 ):
 
     candidates = registry[
-        registry["risk_level"]
+        registry[
+            "risk_level"
+        ]
         == risk_level
     ].copy()
+
 
     candidates[
         "distance_from_target"
@@ -907,6 +1056,7 @@ def get_registry_example(
         - target_probability
     ).abs()
 
+
     return (
         candidates
         .sort_values(
@@ -916,28 +1066,9 @@ def get_registry_example(
     )
 
 
-def safe_number(
-    value,
-    fallback,
+def row_to_defaults(
+    row,
 ):
-
-    if pd.isna(value):
-        return fallback
-
-    return value
-
-
-def row_to_defaults(row):
-
-    gender_value = str(
-        row["gender"]
-    ).upper()
-
-    gender_label = (
-        "Male"
-        if gender_value == "M"
-        else "Female"
-    )
 
     return {
         "age":
@@ -950,9 +1081,6 @@ def row_to_defaults(row):
                 )
             ),
 
-        "gender":
-            gender_label,
-
         "los":
             float(
                 safe_number(
@@ -963,7 +1091,7 @@ def row_to_defaults(row):
                 )
             ),
 
-        "admissions":
+        "previous_admissions":
             int(
                 safe_number(
                     row[
@@ -973,21 +1101,51 @@ def row_to_defaults(row):
                 )
             ),
 
-        "ed_visits":
+        "admissions_30":
             int(
                 safe_number(
                     row[
-                        "previous_emergency_visits"
+                        "admissions_last_30_days"
                     ],
                     0,
                 )
             ),
 
-        "encounters":
+        "admissions_90":
             int(
                 safe_number(
                     row[
-                        "previous_encounters"
+                        "admissions_last_90_days"
+                    ],
+                    0,
+                )
+            ),
+
+        "admissions_365":
+            int(
+                safe_number(
+                    row[
+                        "admissions_last_365_days"
+                    ],
+                    0,
+                )
+            ),
+
+        "days_since":
+            float(
+                safe_number(
+                    row[
+                        "days_since_last_inpatient_admission"
+                    ],
+                    365,
+                )
+            ),
+
+        "prior_readmissions":
+            int(
+                safe_number(
+                    row[
+                        "prior_readmissions_last_365_days"
                     ],
                     0,
                 )
@@ -1037,24 +1195,10 @@ def row_to_defaults(row):
                 ]
             ),
 
-        "heart_failure":
-            bool(
-                row[
-                    "heart_failure"
-                ]
-            ),
-
         "kidney_disease":
             bool(
                 row[
                     "kidney_disease"
-                ]
-            ),
-
-        "lung_disease":
-            bool(
-                row[
-                    "chronic_lung_disease"
                 ]
             ),
 
@@ -1064,65 +1208,7 @@ def row_to_defaults(row):
                     row[
                         "bmi"
                     ],
-                    28.1,
-                )
-            ),
-
-        "systolic":
-            int(
-                round(
-                    safe_number(
-                        row[
-                            "systolic_bp"
-                        ],
-                        117,
-                    )
-                )
-            ),
-
-        "diastolic":
-            int(
-                round(
-                    safe_number(
-                        row[
-                            "diastolic_bp"
-                        ],
-                        78,
-                    )
-                )
-            ),
-
-        "heart_rate":
-            int(
-                round(
-                    safe_number(
-                        row[
-                            "heart_rate"
-                        ],
-                        81,
-                    )
-                )
-            ),
-
-        "respiratory":
-            int(
-                round(
-                    safe_number(
-                        row[
-                            "respiratory_rate"
-                        ],
-                        14,
-                    )
-                )
-            ),
-
-        "glucose":
-            float(
-                safe_number(
-                    row[
-                        "glucose"
-                    ],
-                    84.2,
+                    28.0,
                 )
             ),
 
@@ -1143,21 +1229,21 @@ def row_to_defaults(row):
 low_example = row_to_defaults(
     get_registry_example(
         "LOW",
-        3.0,
+        1.5,
     )
 )
 
 moderate_example = row_to_defaults(
     get_registry_example(
         "MODERATE",
-        20.0,
+        12.0,
     )
 )
 
 high_example = row_to_defaults(
     get_registry_example(
         "HIGH",
-        50.0,
+        55.0,
     )
 )
 
@@ -1183,6 +1269,7 @@ st.sidebar.markdown(
     unsafe_allow_html=True,
 )
 
+
 page = st.sidebar.radio(
     "Workspace",
     [
@@ -1199,12 +1286,13 @@ st.sidebar.markdown(
     unsafe_allow_html=True,
 )
 
+
 st.sidebar.markdown(
     (
         '<div class="model-card">'
         '<div class="model-title">Readmission Intelligence</div>'
         '<div class="model-description">'
-        'Calibrated XGBoost prediction pipeline'
+        'History-aware calibrated XGBoost model'
         '</div>'
         '<div class="active-pill">● MODEL ACTIVE</div>'
         '</div>'
@@ -1212,11 +1300,13 @@ st.sidebar.markdown(
     unsafe_allow_html=True,
 )
 
+
 review_count_sidebar = int(
     registry[
         "intervention_recommended"
     ].sum()
 )
+
 
 st.sidebar.markdown(
     (
@@ -1244,9 +1334,11 @@ if page == "Operations Overview":
         "Monitor population risk, review workload, and priority patients.",
     )
 
+
     total_hospitalizations = len(
         registry
     )
+
 
     actual_readmissions = int(
         registry[
@@ -1254,11 +1346,13 @@ if page == "Operations Overview":
         ].sum()
     )
 
+
     readmission_rate = (
         actual_readmissions
         / total_hospitalizations
         * 100
     )
+
 
     intervention_count = int(
         registry[
@@ -1266,11 +1360,13 @@ if page == "Operations Overview":
         ].sum()
     )
 
+
     intervention_rate = (
         intervention_count
         / total_hospitalizations
         * 100
     )
+
 
     high_risk_count = int(
         (
@@ -1281,16 +1377,19 @@ if page == "Operations Overview":
         ).sum()
     )
 
+
     high_risk_rate = (
         high_risk_count
         / total_hospitalizations
         * 100
     )
 
+
     not_flagged_count = (
         total_hospitalizations
         - intervention_count
     )
+
 
     average_risk = float(
         registry[
@@ -1299,14 +1398,11 @@ if page == "Operations Overview":
     )
 
 
-    # --------------------------------------------------------
-    # KPI CARDS
-    # --------------------------------------------------------
-
     m1, m2, m3, m4 = st.columns(
         4,
         gap="medium",
     )
+
 
     with m1:
 
@@ -1317,6 +1413,7 @@ if page == "Operations Overview":
             "metric-blue",
         )
 
+
     with m2:
 
         metric_card(
@@ -1325,6 +1422,7 @@ if page == "Operations Overview":
             f"{actual_readmissions:,} observed events",
             "metric-purple",
         )
+
 
     with m3:
 
@@ -1335,6 +1433,7 @@ if page == "Operations Overview":
             "metric-cyan",
         )
 
+
     with m4:
 
         metric_card(
@@ -1344,20 +1443,21 @@ if page == "Operations Overview":
             "metric-pink",
         )
 
+
     st.write("")
 
-
-    # --------------------------------------------------------
-    # POPULATION OVERVIEW
-    # --------------------------------------------------------
 
     section_header(
         "Population Overview",
         "Risk distribution and review demand across scored encounters.",
     )
 
+
     chart_col, review_col = st.columns(
-        [1.45, 0.55],
+        [
+            1.45,
+            0.55,
+        ],
         gap="large",
     )
 
@@ -1380,6 +1480,7 @@ if page == "Operations Overview":
             .astype(int)
         )
 
+
         risk_df = pd.DataFrame(
             {
                 "Risk Tier":
@@ -1389,6 +1490,7 @@ if page == "Operations Overview":
                     risk_counts.values,
             }
         )
+
 
         risk_chart = (
             alt.Chart(
@@ -1461,6 +1563,7 @@ if page == "Operations Overview":
             )
         )
 
+
         st.altair_chart(
             risk_chart,
             use_container_width=True,
@@ -1475,11 +1578,13 @@ if page == "Operations Overview":
             * 100
         )
 
+
         not_flagged_rate = (
             not_flagged_count
             / total_hospitalizations
             * 100
         )
+
 
         st.markdown(
             (
@@ -1518,18 +1623,18 @@ if page == "Operations Overview":
     st.write("")
 
 
-    # --------------------------------------------------------
-    # PRIORITY WORKLIST
-    # --------------------------------------------------------
-
     section_header(
         "Priority Worklist",
-        "Filter, review, and search patient encounters by modeled risk.",
+        "Filter, review, and search patients by modeled readmission risk.",
     )
 
 
     filter_col1, filter_col2, filter_col3 = st.columns(
-        [0.34, 0.33, 0.33],
+        [
+            0.34,
+            0.33,
+            0.33,
+        ],
         gap="medium",
     )
 
@@ -1721,8 +1826,8 @@ if page == "Operations Overview":
             "Risk (%)",
             "risk_level",
             "Review Status",
-            "previous_inpatient_admissions",
-            "previous_emergency_visits",
+            "admissions_last_90_days",
+            "prior_readmissions_last_365_days",
             "Conditions",
         ]
     ].head(
@@ -1735,11 +1840,11 @@ if page == "Operations Overview":
             "risk_level":
                 "Risk Tier",
 
-            "previous_inpatient_admissions":
-                "Prior Admissions",
+            "admissions_last_90_days":
+                "Admissions / 90 Days",
 
-            "previous_emergency_visits":
-                "ED Visits",
+            "prior_readmissions_last_365_days":
+                "Prior Readmissions / Year",
         }
     )
 
@@ -1766,26 +1871,38 @@ if page == "Operations Overview":
         "Model validation"
     ):
 
-        v1, v2 = st.columns(
-            2
+        v1, v2, v3 = st.columns(
+            3
         )
+
 
         with v1:
 
             st.metric(
                 "ROC-AUC",
-                "0.913",
+                "0.932",
             )
+
 
         with v2:
 
             st.metric(
                 "PR-AUC",
-                "0.633",
+                "0.754",
             )
 
+
+        with v3:
+
+            st.metric(
+                "Brier Score",
+                "0.0559",
+            )
+
+
         st.caption(
-            "Synthetic Synthea validation results. "
+            "Held-out patient-level validation on synthetic Synthea data. "
+            "No patients overlap between training and testing. "
             "Not intended as clinical validation."
         )
 
@@ -1799,7 +1916,7 @@ elif page == "Patient Review":
     page_header(
         "PATIENT REVIEW",
         "Individual Risk Profile",
-        "Explore patient risk, utilization, clinical context, and model drivers.",
+        "Review a patient's readmission risk, recent history, clinical context, and model drivers.",
     )
 
 
@@ -1824,13 +1941,11 @@ elif page == "Patient Review":
     }
 
 
-    selected_label = (
-        st.selectbox(
-            "Search Patient",
-            list(
-                patient_lookup.keys()
-            ),
-        )
+    selected_label = st.selectbox(
+        "Search Patient",
+        list(
+            patient_lookup.keys()
+        ),
     )
 
 
@@ -1857,15 +1972,9 @@ elif page == "Patient Review":
 
 
     patient = (
-        patient_history.iloc[
-            0
-        ]
+        patient_history.iloc[0]
     )
 
-
-    # --------------------------------------------------------
-    # PATIENT SUMMARY
-    # --------------------------------------------------------
 
     c1, c2, c3, c4 = st.columns(
         4,
@@ -1907,10 +2016,11 @@ elif page == "Patient Review":
             else "NOT FLAGGED"
         )
 
+
         metric_card(
             "Review Status",
             review_status,
-            "Based on intervention threshold",
+            "22% operating threshold",
             "metric-cyan",
         )
 
@@ -1918,13 +2028,13 @@ elif page == "Patient Review":
     with c4:
 
         metric_card(
-            "Prior Admissions",
+            "Admissions / 90 Days",
             int(
                 patient[
-                    "previous_inpatient_admissions"
+                    "admissions_last_90_days"
                 ]
             ),
-            "Before this encounter",
+            "Recent inpatient history",
             "metric-pink",
         )
 
@@ -1932,229 +2042,114 @@ elif page == "Patient Review":
     st.write("")
 
 
-    # --------------------------------------------------------
-    # DRIVER EXPLANATIONS
-    # --------------------------------------------------------
-
     section_header(
         "Why This Patient Scored This Way",
         "The strongest patient-specific contributors to the model prediction.",
     )
 
 
-    patient_data = {
-        "age_at_admission":
-            patient[
-                "age_at_admission"
-            ],
-
-        "gender":
-            patient[
-                "gender"
-            ],
-
-        "length_of_stay":
-            patient[
-                "length_of_stay"
-            ],
-
-        "previous_inpatient_admissions":
-            patient[
-                "previous_inpatient_admissions"
-            ],
-
-        "previous_emergency_visits":
-            patient[
-                "previous_emergency_visits"
-            ],
-
-        "previous_encounters":
-            patient[
-                "previous_encounters"
-            ],
-
-        "condition_count":
-            patient[
-                "condition_count"
-            ],
-
-        "diabetes":
-            patient[
-                "diabetes"
-            ],
-
-        "hypertension":
-            patient[
-                "hypertension"
-            ],
-
-        "heart_failure":
-            patient[
-                "heart_failure"
-            ],
-
-        "kidney_disease":
-            patient[
-                "kidney_disease"
-            ],
-
-        "chronic_lung_disease":
-            patient[
-                "chronic_lung_disease"
-            ],
-
-        "medication_count":
-            patient[
-                "medication_count"
-            ],
-
-        "procedure_count":
-            patient[
-                "procedure_count"
-            ],
-
-        "bmi":
-            patient[
-                "bmi"
-            ],
-
-        "systolic_bp":
-            patient[
-                "systolic_bp"
-            ],
-
-        "diastolic_bp":
-            patient[
-                "diastolic_bp"
-            ],
-
-        "heart_rate":
-            patient[
-                "heart_rate"
-            ],
-
-        "respiratory_rate":
-            patient[
-                "respiratory_rate"
-            ],
-
-        "glucose":
-            patient[
-                "glucose"
-            ],
-    }
+    patient_data = row_to_model_input(
+        patient
+    )
 
 
     try:
 
-        patient_drivers = (
-            explain_readmission(
-                patient_data,
-                top_n=5,
-            )
+        patient_drivers = explain_readmission(
+            patient_data,
+            top_n=5,
         )
+
 
         render_drivers(
             patient_drivers
         )
+
 
         st.caption(
             "These contributors explain the model's prediction. "
             "They do not establish that a factor causes or prevents readmission."
         )
 
+
         factor_definitions()
 
-    except Exception:
+
+    except Exception as error:
 
         st.warning(
             "Risk-driver explanation could not be generated."
         )
 
-
-    st.write("")
-
-
-    with st.expander(
-        "What does Review Status mean?"
-    ):
-
-        st.markdown(
-            """
-**Review Status** indicates whether this encounter crossed Admitra's
-operating threshold for additional review.
-
-It is separate from the patient's **Risk Tier**. Risk Tier describes the
-relative level of modeled readmission risk, while Review Status determines
-whether that risk is high enough to enter the review queue.
-
-The threshold is an operating rule for this synthetic demonstration and is
-not a clinically validated treatment guideline.
-"""
+        st.caption(
+            str(
+                error
+            )
         )
 
 
-    # --------------------------------------------------------
-    # UTILIZATION + CLINICAL PROFILE
-    # --------------------------------------------------------
-
     st.write("")
 
 
-    utilization_col, clinical_col = st.columns(
+    history_col, clinical_col = st.columns(
         2,
         gap="large",
     )
 
 
-    with utilization_col:
+    with history_col:
 
         section_header(
-            "Utilization Profile",
-            "Healthcare utilization and treatment complexity.",
+            "Recent Patient History",
+            "Recent inpatient utilization and known readmission history.",
         )
 
-        utilization = pd.DataFrame(
+
+        recent_history = pd.DataFrame(
             {
                 "Metric": [
-                    "Length of Stay",
-                    "Prior Admissions",
-                    "ED Visits",
-                    "Previous Encounters",
-                    "Medications",
-                    "Procedures",
+                    "Admissions in last 30 days",
+                    "Admissions in last 90 days",
+                    "Admissions in last 365 days",
+                    "Prior readmissions in last 365 days",
+                    "Days since last inpatient admission",
+                    "Lifetime prior admissions",
                 ],
 
                 "Value": [
                     patient[
-                        "length_of_stay"
+                        "admissions_last_30_days"
                     ],
+
+                    patient[
+                        "admissions_last_90_days"
+                    ],
+
+                    patient[
+                        "admissions_last_365_days"
+                    ],
+
+                    patient[
+                        "prior_readmissions_last_365_days"
+                    ],
+
+                    round(
+                        patient[
+                            "days_since_last_inpatient_admission"
+                        ],
+                        1,
+                    ),
 
                     patient[
                         "previous_inpatient_admissions"
-                    ],
-
-                    patient[
-                        "previous_emergency_visits"
-                    ],
-
-                    patient[
-                        "previous_encounters"
-                    ],
-
-                    patient[
-                        "medication_count"
-                    ],
-
-                    patient[
-                        "procedure_count"
                     ],
                 ],
             }
         )
 
+
         st.dataframe(
-            utilization,
+            recent_history,
             use_container_width=True,
             hide_index=True,
         )
@@ -2164,52 +2159,86 @@ not a clinically validated treatment guideline.
 
         section_header(
             "Clinical Profile",
-            "Major comorbid conditions available to the model.",
+            "Clinical complexity and documented conditions available in the registry.",
         )
+
 
         clinical = pd.DataFrame(
             {
-                "Condition": [
+                "Metric": [
+                    "Age",
+                    "Length of Stay",
+                    "Condition Count",
+                    "Medication Count",
+                    "Procedure Count",
+                    "BMI",
                     "Diabetes",
                     "Hypertension",
-                    "Heart Failure",
                     "Kidney Disease",
-                    "Chronic Lung Disease",
                 ],
 
-                "Present": [
-                    bool(
+                "Value": [
+                    patient[
+                        "age_at_admission"
+                    ],
+
+                    round(
+                        patient[
+                            "length_of_stay"
+                        ],
+                        1,
+                    ),
+
+                    patient[
+                        "condition_count"
+                    ],
+
+                    patient[
+                        "medication_count"
+                    ],
+
+                    patient[
+                        "procedure_count"
+                    ],
+
+                    round(
+                        safe_number(
+                            patient[
+                                "bmi"
+                            ],
+                            0,
+                        ),
+                        1,
+                    ),
+
+                    "Yes"
+                    if bool(
                         patient[
                             "diabetes"
                         ]
-                    ),
+                    )
+                    else "No",
 
-                    bool(
+                    "Yes"
+                    if bool(
                         patient[
                             "hypertension"
                         ]
-                    ),
+                    )
+                    else "No",
 
-                    bool(
-                        patient[
-                            "heart_failure"
-                        ]
-                    ),
-
-                    bool(
+                    "Yes"
+                    if bool(
                         patient[
                             "kidney_disease"
                         ]
-                    ),
+                    )
+                    else "No",
 
-                    bool(
-                        patient[
-                            "chronic_lung_disease"
-                        ]
-                    ),
                 ],
             }
         )
+
 
         st.dataframe(
             clinical,
@@ -2218,15 +2247,12 @@ not a clinically validated treatment guideline.
         )
 
 
-    # --------------------------------------------------------
-    # ENCOUNTER HISTORY
-    # --------------------------------------------------------
-
     st.write("")
 
+
     section_header(
-        "Encounter History",
-        "Historical modeled risk and observed outcomes.",
+        "Prior Encounters",
+        "Modeled risk and observed outcomes across this patient's recorded hospitalizations.",
     )
 
 
@@ -2237,7 +2263,8 @@ not a clinically validated treatment guideline.
             "risk_level",
             "intervention_recommended",
             "actual_readmitted_30_days",
-            "length_of_stay",
+            "admissions_last_90_days",
+            "prior_readmissions_last_365_days",
         ]
     ].copy()
 
@@ -2270,36 +2297,36 @@ not a clinically validated treatment guideline.
     )
 
 
-    encounter_table = (
-        encounter_table[
-            [
-                "Encounter",
-                "readmission_probability_percent",
-                "risk_level",
-                "Review Status",
-                "actual_readmitted_30_days",
-                "length_of_stay",
-            ]
+    encounter_table = encounter_table[
+        [
+            "Encounter",
+            "readmission_probability_percent",
+            "risk_level",
+            "Review Status",
+            "actual_readmitted_30_days",
+            "admissions_last_90_days",
+            "prior_readmissions_last_365_days",
         ]
-    )
+    ]
 
 
-    encounter_table = (
-        encounter_table.rename(
-            columns={
-                "readmission_probability_percent":
-                    "Risk (%)",
+    encounter_table = encounter_table.rename(
+        columns={
+            "readmission_probability_percent":
+                "Risk (%)",
 
-                "risk_level":
-                    "Risk Tier",
+            "risk_level":
+                "Risk Tier",
 
-                "actual_readmitted_30_days":
-                    "Readmitted",
+            "actual_readmitted_30_days":
+                "Readmitted",
 
-                "length_of_stay":
-                    "LOS",
-            }
-        )
+            "admissions_last_90_days":
+                "Admissions / 90 Days",
+
+            "prior_readmissions_last_365_days":
+                "Prior Readmissions / Year",
+        }
     )
 
 
@@ -2320,6 +2347,26 @@ not a clinically validated treatment guideline.
     )
 
 
+    with st.expander(
+        "What does Review Status mean?"
+    ):
+
+        st.markdown(
+            """
+**Review Status** indicates whether the encounter crossed Admitra's operating threshold for additional review.
+
+The current history-aware model uses a **22% calibrated readmission probability threshold**.
+
+- Below 22%: the encounter is not automatically flagged.
+- At or above 22%: additional review is recommended.
+
+Risk Tier and Review Status are separate. Risk Tier describes where the patient's probability falls within the modeled population, while Review Status determines whether the patient enters the operational review queue.
+
+This threshold was selected using grouped out-of-fold validation and is not a clinically validated treatment guideline.
+"""
+        )
+
+
 # ============================================================
 # RISK ASSESSMENT
 # ============================================================
@@ -2329,13 +2376,9 @@ elif page == "Risk Assessment":
     page_header(
         "RISK ASSESSMENT",
         "Readmission Risk Assessment",
-        "Assess a patient manually or load a representative synthetic encounter.",
+        "Estimate 30-day readmission risk using recent patient history and clinical context.",
     )
 
-
-    # --------------------------------------------------------
-    # SESSION STATE
-    # --------------------------------------------------------
 
     if (
         "assessment_preset"
@@ -2369,20 +2412,14 @@ elif page == "Risk Assessment":
     }
 
 
-    # --------------------------------------------------------
-    # QUICK START
-    # --------------------------------------------------------
-
     section_header(
         "Quick Start",
-        "Load a real synthetic encounter from the scored Synthea population.",
+        "Load a representative synthetic patient or enter a custom history.",
     )
 
 
-    b1, b2, b3, b4 = (
-        st.columns(
-            4
-        )
+    b1, b2, b3, b4 = st.columns(
+        4
     )
 
 
@@ -2465,33 +2502,31 @@ elif page == "Risk Assessment":
     )
 
 
-    # --------------------------------------------------------
-    # DEFAULTS
-    # --------------------------------------------------------
-
     if preset_name == "Custom":
 
         defaults = {
             "age": 65,
-            "gender": "Female",
             "los": 5.0,
-            "admissions": 0,
-            "ed_visits": 0,
-            "encounters": 5,
+
+            "previous_admissions": 0,
+            "admissions_30": 0,
+            "admissions_90": 0,
+            "admissions_365": 0,
+            "days_since": 365.0,
+            "prior_readmissions": 0,
+
             "conditions": 2,
             "medications": 5,
-            "procedures": 5,
+            "procedures": 3,
+
             "diabetes": False,
             "hypertension": False,
-            "heart_failure": False,
             "kidney_disease": False,
-            "lung_disease": False,
-            "bmi": 28.1,
-            "systolic": 117,
-            "diastolic": 78,
-            "heart_rate": 81,
-            "respiratory": 14,
-            "glucose": 84.2,
+
+            "heart_failure": False,
+            "chronic_lung_disease": False,
+
+            "bmi": 27.0,
         }
 
     else:
@@ -2502,10 +2537,11 @@ elif page == "Risk Assessment":
             ]
         )
 
+
         st.info(
-            f'{preset_name} example loaded from the '
-            f'scored Synthea registry. Its stored modeled '
-            f'risk is {defaults["source_probability"]:.1f}% '
+            f'{preset_name} example loaded from the scored '
+            f'Synthea registry. Stored modeled risk: '
+            f'{defaults["source_probability"]:.1f}% '
             f'({defaults["source_risk_level"]}).'
         )
 
@@ -2518,14 +2554,15 @@ elif page == "Risk Assessment":
 
 
     # --------------------------------------------------------
-    # PATIENT
+    # PATIENT BASICS
     # --------------------------------------------------------
 
     st.write("")
 
+
     section_header(
-        "Patient",
-        "Core patient and hospitalization information.",
+        "Patient Basics",
+        "Core information about the current hospitalization.",
     )
 
 
@@ -2546,142 +2583,309 @@ elif page == "Risk Assessment":
                     "age"
                 ]
             ),
-            key=f"age_{key_suffix}",
+            key=(
+                f"age_"
+                f"{key_suffix}"
+            ),
         )
 
 
     with p2:
 
-        gender_options = [
-            "Female",
-            "Male",
-        ]
-
-        gender_index = (
-            0
-            if defaults[
-                "gender"
-            ]
-            == "Female"
-            else 1
-        )
-
-        gender = st.selectbox(
-            "Gender",
-            gender_options,
-            index=gender_index,
-            key=f"gender_{key_suffix}",
+        length_of_stay = st.number_input(
+            "Length of Stay (days)",
+            min_value=0.0,
+            value=float(
+                defaults[
+                    "los"
+                ]
+            ),
+            step=0.5,
+            key=(
+                f"los_"
+                f"{key_suffix}"
+            ),
         )
 
 
     with p3:
 
-        length_of_stay = (
-            st.number_input(
-                "Length of Stay (days)",
-                min_value=0.0,
-                value=float(
-                    defaults[
-                        "los"
-                    ]
-                ),
-                step=0.5,
-                key=f"los_{key_suffix}",
-            )
+        bmi = st.number_input(
+            "BMI",
+            min_value=10.0,
+            max_value=80.0,
+            value=float(
+                defaults[
+                    "bmi"
+                ]
+            ),
+            step=0.1,
+            key=(
+                f"bmi_"
+                f"{key_suffix}"
+            ),
         )
 
 
     # --------------------------------------------------------
-    # UTILIZATION
+    # RECENT ADMISSION HISTORY
     # --------------------------------------------------------
 
     st.write("")
 
+
     section_header(
-        "Recent Utilization",
-        "Prior healthcare utilization available to the model.",
+        "Recent Admission History",
+        "Recent inpatient utilization is a major component of the history-aware model.",
     )
 
 
-    u1, u2, u3 = st.columns(
+    h1, h2, h3 = st.columns(
         3,
         gap="medium",
     )
 
 
-    with u1:
+    with h1:
 
-        previous_inpatient_admissions = (
-            st.number_input(
-                "Prior Admissions",
-                min_value=0,
-                value=int(
-                    defaults[
-                        "admissions"
-                    ]
-                ),
-                key=(
-                    f"admissions_"
-                    f"{key_suffix}"
-                ),
-            )
+        admissions_30 = st.number_input(
+            "Admissions in Last 30 Days",
+            min_value=0,
+            max_value=20,
+            value=int(
+                defaults[
+                    "admissions_30"
+                ]
+            ),
+            key=(
+                f"admissions30_"
+                f"{key_suffix}"
+            ),
         )
 
 
-    with u2:
+    with h2:
 
-        previous_emergency_visits = (
-            st.number_input(
-                "ED Visits",
-                min_value=0,
-                value=int(
-                    defaults[
-                        "ed_visits"
-                    ]
-                ),
-                key=f"ed_{key_suffix}",
-            )
+        admissions_90 = st.number_input(
+            "Admissions in Last 90 Days",
+            min_value=0,
+            max_value=30,
+            value=int(
+                defaults[
+                    "admissions_90"
+                ]
+            ),
+            key=(
+                f"admissions90_"
+                f"{key_suffix}"
+            ),
         )
 
 
-    with u3:
+    with h3:
 
-        previous_encounters = (
-            st.number_input(
-                "Prior Encounters",
-                min_value=0,
-                value=int(
-                    defaults[
-                        "encounters"
-                    ]
-                ),
-                key=(
-                    f"encounters_"
-                    f"{key_suffix}"
-                ),
-            )
+        admissions_365 = st.number_input(
+            "Admissions in Last 365 Days",
+            min_value=0,
+            max_value=100,
+            value=int(
+                defaults[
+                    "admissions_365"
+                ]
+            ),
+            key=(
+                f"admissions365_"
+                f"{key_suffix}"
+            ),
         )
 
 
-    # --------------------------------------------------------
-    # CONDITIONS
-    # --------------------------------------------------------
-
-    st.write("")
-
-    section_header(
-        "Clinical Conditions",
-        "Select documented conditions for this patient.",
-    )
-
-
-    cc1, cc2, cc3 = st.columns(
+    h4, h5, h6 = st.columns(
         3,
         gap="medium",
     )
 
 
-    with cc1:
+    with h4:
+
+        previous_admissions = st.number_input(
+            "Total Prior Inpatient Admissions",
+            min_value=0,
+            max_value=500,
+            value=int(
+                defaults[
+                    "previous_admissions"
+                ]
+            ),
+            key=(
+                f"previous_admissions_"
+                f"{key_suffix}"
+            ),
+        )
+
+
+    with h5:
+
+        prior_readmissions = st.number_input(
+            "Prior Readmissions in Last 365 Days",
+            min_value=0,
+            max_value=50,
+            value=int(
+                defaults[
+                    "prior_readmissions"
+                ]
+            ),
+            key=(
+                f"readmissions365_"
+                f"{key_suffix}"
+            ),
+        )
+
+
+    with h6:
+
+        days_since = st.number_input(
+            "Days Since Last Inpatient Admission",
+            min_value=0.0,
+            max_value=365.0,
+            value=float(
+                defaults[
+                    "days_since"
+                ]
+            ),
+            step=1.0,
+            key=(
+                f"days_since_"
+                f"{key_suffix}"
+            ),
+            help=(
+                "Use 365 when the patient has no known prior "
+                "inpatient admission or the last admission "
+                "was more than one year ago."
+            ),
+        )
+
+
+    if admissions_30 > admissions_90:
+
+        st.warning(
+            "Admissions in the last 30 days cannot exceed "
+            "admissions in the last 90 days. Admitra will "
+            "normalize the history before scoring."
+        )
+
+
+    if admissions_90 > admissions_365:
+
+        st.warning(
+            "Admissions in the last 90 days cannot exceed "
+            "admissions in the last 365 days. Admitra will "
+            "normalize the history before scoring."
+        )
+
+
+    if admissions_365 > previous_admissions:
+
+        st.warning(
+            "Admissions in the last year cannot exceed total "
+            "prior inpatient admissions. Admitra will normalize "
+            "the history before scoring."
+        )
+
+
+    # --------------------------------------------------------
+    # CLINICAL COMPLEXITY
+    # --------------------------------------------------------
+
+    st.write("")
+
+
+    section_header(
+        "Clinical Complexity",
+        "Provide the current patient's condition and treatment profile.",
+    )
+
+
+    c1, c2, c3 = st.columns(
+        3,
+        gap="medium",
+    )
+
+
+    with c1:
+
+        condition_count = st.number_input(
+            "Active Conditions",
+            min_value=0,
+            max_value=100,
+            value=int(
+                defaults[
+                    "conditions"
+                ]
+            ),
+            key=(
+                f"conditions_"
+                f"{key_suffix}"
+            ),
+        )
+
+
+    with c2:
+
+        medication_count = st.number_input(
+            "Medication Count",
+            min_value=0,
+            max_value=100,
+            value=int(
+                defaults[
+                    "medications"
+                ]
+            ),
+            key=(
+                f"medications_"
+                f"{key_suffix}"
+            ),
+        )
+
+
+    with c3:
+
+        procedure_count = st.number_input(
+            "Procedure Count",
+            min_value=0,
+            max_value=200,
+            value=int(
+                defaults[
+                    "procedures"
+                ]
+            ),
+            key=(
+                f"procedures_"
+                f"{key_suffix}"
+            ),
+        )
+
+
+    # --------------------------------------------------------
+    # DOCUMENTED CONDITIONS
+    # --------------------------------------------------------
+
+    st.write("")
+
+
+    section_header(
+        "Documented Conditions",
+        "Select chronic conditions documented for this patient.",
+    )
+
+
+    d1, d2, d3 = st.columns(
+        3,
+        gap="medium",
+    )
+
+
+    with d1:
 
         diabetes = st.checkbox(
             "Diabetes",
@@ -2693,6 +2897,9 @@ elif page == "Risk Assessment":
                 f"{key_suffix}"
             ),
         )
+
+
+    with d2:
 
         hypertension = st.checkbox(
             "Hypertension",
@@ -2706,18 +2913,7 @@ elif page == "Risk Assessment":
         )
 
 
-    with cc2:
-
-        heart_failure = st.checkbox(
-            "Heart Failure",
-            value=defaults[
-                "heart_failure"
-            ],
-            key=(
-                f"heart_failure_"
-                f"{key_suffix}"
-            ),
-        )
+    with d3:
 
         kidney_disease = st.checkbox(
             "Kidney Disease",
@@ -2729,220 +2925,6 @@ elif page == "Risk Assessment":
                 f"{key_suffix}"
             ),
         )
-
-
-    with cc3:
-
-        chronic_lung_disease = (
-            st.checkbox(
-                "Chronic Lung Disease",
-                value=defaults[
-                    "lung_disease"
-                ],
-                key=(
-                    f"lung_"
-                    f"{key_suffix}"
-                ),
-            )
-        )
-
-
-    # --------------------------------------------------------
-    # TREATMENT DETAILS
-    # --------------------------------------------------------
-
-    with st.expander(
-        "Treatment Details",
-        expanded=False,
-    ):
-
-        t1, t2, t3 = (
-            st.columns(
-                3
-            )
-        )
-
-
-        with t1:
-
-            condition_count = (
-                st.number_input(
-                    "Active Conditions",
-                    min_value=0,
-                    value=int(
-                        defaults[
-                            "conditions"
-                        ]
-                    ),
-                    key=(
-                        f"condition_count_"
-                        f"{key_suffix}"
-                    ),
-                )
-            )
-
-
-        with t2:
-
-            medication_count = (
-                st.number_input(
-                    "Medications",
-                    min_value=0,
-                    value=int(
-                        defaults[
-                            "medications"
-                        ]
-                    ),
-                    key=(
-                        f"medications_"
-                        f"{key_suffix}"
-                    ),
-                )
-            )
-
-
-        with t3:
-
-            procedure_count = (
-                st.number_input(
-                    "Procedures",
-                    min_value=0,
-                    value=int(
-                        defaults[
-                            "procedures"
-                        ]
-                    ),
-                    key=(
-                        f"procedures_"
-                        f"{key_suffix}"
-                    ),
-                )
-            )
-
-
-    # --------------------------------------------------------
-    # VITALS & LABS
-    # --------------------------------------------------------
-
-    with st.expander(
-        "Vitals & Labs",
-        expanded=False,
-    ):
-
-        v1, v2, v3 = (
-            st.columns(
-                3,
-                gap="medium",
-            )
-        )
-
-
-        with v1:
-
-            bmi = st.number_input(
-                "BMI",
-                min_value=10.0,
-                max_value=80.0,
-                value=float(
-                    defaults[
-                        "bmi"
-                    ]
-                ),
-                step=0.1,
-                key=f"bmi_{key_suffix}",
-            )
-
-            heart_rate = (
-                st.number_input(
-                    "Heart Rate",
-                    min_value=20,
-                    max_value=250,
-                    value=int(
-                        defaults[
-                            "heart_rate"
-                        ]
-                    ),
-                    key=(
-                        f"heart_rate_"
-                        f"{key_suffix}"
-                    ),
-                )
-            )
-
-
-        with v2:
-
-            systolic_bp = (
-                st.number_input(
-                    "Systolic BP",
-                    min_value=50,
-                    max_value=250,
-                    value=int(
-                        defaults[
-                            "systolic"
-                        ]
-                    ),
-                    key=(
-                        f"systolic_"
-                        f"{key_suffix}"
-                    ),
-                )
-            )
-
-            respiratory_rate = (
-                st.number_input(
-                    "Respiratory Rate",
-                    min_value=5,
-                    max_value=60,
-                    value=int(
-                        defaults[
-                            "respiratory"
-                        ]
-                    ),
-                    key=(
-                        f"respiratory_"
-                        f"{key_suffix}"
-                    ),
-                )
-            )
-
-
-        with v3:
-
-            diastolic_bp = (
-                st.number_input(
-                    "Diastolic BP",
-                    min_value=20,
-                    max_value=180,
-                    value=int(
-                        defaults[
-                            "diastolic"
-                        ]
-                    ),
-                    key=(
-                        f"diastolic_"
-                        f"{key_suffix}"
-                    ),
-                )
-            )
-
-            glucose = (
-                st.number_input(
-                    "Glucose",
-                    min_value=20.0,
-                    max_value=600.0,
-                    value=float(
-                        defaults[
-                            "glucose"
-                        ]
-                    ),
-                    step=0.1,
-                    key=(
-                        f"glucose_"
-                        f"{key_suffix}"
-                    ),
-                )
-            )
 
 
     # --------------------------------------------------------
@@ -2961,11 +2943,11 @@ elif page == "Risk Assessment":
 
     if analyze:
 
-        gender_code = (
-            "F"
-            if gender
-            == "Female"
-            else "M"
+        has_prior_inpatient = int(
+            (
+                previous_admissions > 0
+                or admissions_365 > 0
+            )
         )
 
 
@@ -2973,23 +2955,38 @@ elif page == "Risk Assessment":
             "age_at_admission":
                 age,
 
-            "gender":
-                gender_code,
-
             "length_of_stay":
                 length_of_stay,
 
             "previous_inpatient_admissions":
-                previous_inpatient_admissions,
+                previous_admissions,
 
-            "previous_emergency_visits":
-                previous_emergency_visits,
+            "admissions_last_30_days":
+                admissions_30,
 
-            "previous_encounters":
-                previous_encounters,
+            "admissions_last_90_days":
+                admissions_90,
+
+            "admissions_last_365_days":
+                admissions_365,
+
+            "days_since_last_inpatient_admission":
+                days_since,
+
+            "has_prior_inpatient_admission":
+                has_prior_inpatient,
+
+            "prior_readmissions_last_365_days":
+                prior_readmissions,
 
             "condition_count":
                 condition_count,
+
+            "medication_count":
+                medication_count,
+
+            "procedure_count":
+                procedure_count,
 
             "diabetes":
                 int(
@@ -3001,61 +2998,26 @@ elif page == "Risk Assessment":
                     hypertension
                 ),
 
-            "heart_failure":
-                int(
-                    heart_failure
-                ),
-
             "kidney_disease":
                 int(
                     kidney_disease
                 ),
 
-            "chronic_lung_disease":
-                int(
-                    chronic_lung_disease
-                ),
-
-            "medication_count":
-                medication_count,
-
-            "procedure_count":
-                procedure_count,
-
             "bmi":
                 bmi,
-
-            "systolic_bp":
-                systolic_bp,
-
-            "diastolic_bp":
-                diastolic_bp,
-
-            "heart_rate":
-                heart_rate,
-
-            "respiratory_rate":
-                respiratory_rate,
-
-            "glucose":
-                glucose,
         }
 
 
         try:
 
-            result = (
-                predict_readmission(
-                    patient_data
-                )
+            result = predict_readmission(
+                patient_data
             )
 
 
-            drivers = (
-                explain_readmission(
-                    patient_data,
-                    top_n=5,
-                )
+            drivers = explain_readmission(
+                patient_data,
+                top_n=5,
             )
 
 
@@ -3064,7 +3026,7 @@ elif page == "Risk Assessment":
 
             section_header(
                 "Risk Intelligence",
-                "Calibrated readmission prediction and review status.",
+                "Calibrated 30-day readmission prediction and review status.",
             )
 
 
@@ -3079,7 +3041,7 @@ elif page == "Risk Assessment":
                 metric_card(
                     "30-Day Risk",
                     f'{result["probability_percent"]}%',
-                    "Calibrated probability",
+                    "Calibrated estimate of 30-day readmission probability",
                     "metric-blue",
                 )
 
@@ -3106,10 +3068,11 @@ elif page == "Risk Assessment":
                     else "NOT FLAGGED"
                 )
 
+
                 metric_card(
                     "Review Status",
                     review_status,
-                    "Based on intervention threshold",
+                    "22% operating threshold",
                     "metric-cyan",
                 )
 
@@ -3123,48 +3086,40 @@ elif page == "Risk Assessment":
 
                 st.warning(
                     f'**Additional review recommended.** '
-                    f'This encounter exceeds Admitra’s '
+                    f'This patient exceeds Admitra’s '
                     f'{result["production_threshold_percent"]}% '
-                    f'intervention threshold.'
+                    f'operating threshold.'
                 )
 
             else:
 
                 st.success(
                     f'**No additional review flag.** '
-                    f'This encounter remains below Admitra’s '
+                    f'This patient remains below Admitra’s '
                     f'{result["production_threshold_percent"]}% '
-                    f'intervention threshold.'
+                    f'operating threshold.'
                 )
 
 
             with st.expander(
-                "What is the intervention threshold?"
+                "What does the 22% threshold mean?"
             ):
 
                 st.markdown(
                     f"""
-The **{result["production_threshold_percent"]}% intervention threshold**
-is the predicted readmission probability at which Admitra places an
-encounter into the review queue.
+The **{result["production_threshold_percent"]}% review threshold** is the calibrated readmission probability at which Admitra places an encounter into the review queue.
 
-During model development, the threshold was selected using
-**out-of-fold validation**. Among the evaluated thresholds, the operating
-cutoff was chosen to maximize **F1 score while maintaining at least 70%
-recall**.
+It was selected using **patient-grouped out-of-fold validation**. The operating rule chose the threshold with the highest F1 score while maintaining at least 70% recall.
 
-In practical terms:
+For the final held-out test population, the model achieved approximately:
 
-- **Below {result["production_threshold_percent"]}%:** the encounter is not automatically flagged.
-- **At or above {result["production_threshold_percent"]}%:** additional review is recommended.
+- **80.1% recall**
+- **52.3% precision**
+- **0.633 F1**
+- **0.932 ROC-AUC**
+- **0.754 PR-AUC**
 
-The **Risk Tier** and **Review Status** serve different purposes. Risk Tier
-describes where the patient's modeled probability falls within the
-population, while Review Status determines whether that probability crosses
-the operating cutoff used to prioritize encounters.
-
-This threshold was developed for this synthetic demonstration and is not a
-clinically validated treatment guideline.
+The threshold is used for prioritization. It is not a clinical treatment guideline.
 """
                 )
 
@@ -3174,7 +3129,7 @@ clinically validated treatment guideline.
 
             section_header(
                 "Why This Patient Scored This Way",
-                "The strongest patient-specific contributors to the prediction.",
+                "The strongest patient-specific contributors to this prediction.",
             )
 
 
@@ -3202,6 +3157,11 @@ clinically validated treatment guideline.
                 )
 
                 st.write(
+                    f'**Raw XGBoost probability:** '
+                    f'{result["raw_probability_percent"]}%'
+                )
+
+                st.write(
                     f'**Risk tier:** '
                     f'{result["risk_level"]}'
                 )
@@ -3212,7 +3172,7 @@ clinically validated treatment guideline.
                 )
 
                 st.write(
-                    f'**Intervention threshold:** '
+                    f'**Review threshold:** '
                     f'{result["production_threshold_percent"]}%'
                 )
 
@@ -3246,8 +3206,9 @@ st.markdown(
     (
         '<div class="disclaimer">'
         'Admitra is a portfolio demonstration using synthetic '
-        'Synthea healthcare data. Model outputs are not intended '
-        'for clinical use.'
+        'Synthea healthcare data. Predictions are generated by '
+        'a history-aware calibrated XGBoost model and are not '
+        'intended for clinical use.'
         '</div>'
     ),
     unsafe_allow_html=True,

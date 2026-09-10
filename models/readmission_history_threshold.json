@@ -1,0 +1,5 @@
+{
+  "production_threshold": 0.22000000000000003,
+  "selection_rule": "Highest grouped OOF F1 with recall >= 0.70",
+  "calibration_method": "SIGMOID"
+}

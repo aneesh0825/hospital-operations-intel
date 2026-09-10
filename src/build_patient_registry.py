@@ -4,12 +4,12 @@ from src.predict_readmission import predict_readmission
 
 
 # ============================================================
-# LOAD V2 DATA
+# PATHS
 # ============================================================
 
 DATA_PATH = (
     "data/processed/"
-    "synthea_readmission_ml_dataset_v2.csv"
+    "synthea_readmission_ml_dataset_v3.csv"
 )
 
 OUTPUT_PATH = (
@@ -18,19 +18,12 @@ OUTPUT_PATH = (
 )
 
 
+# ============================================================
+# LOAD DATA
+# ============================================================
+
 data = pd.read_csv(
     DATA_PATH
-)
-
-
-# Drop features we decided not to use
-data = data.drop(
-    columns=[
-        "height",
-        "weight",
-        "temperature"
-    ],
-    errors="ignore"
 )
 
 
@@ -39,7 +32,6 @@ print("BUILDING ADMITRA PATIENT REGISTRY")
 print("=" * 60)
 
 print()
-
 print("Hospitalizations:")
 print(len(data))
 
@@ -54,12 +46,8 @@ results = []
 for index, row in data.iterrows():
 
     patient_data = {
-
         "age_at_admission":
             row["age_at_admission"],
-
-        "gender":
-            row["gender"],
 
         "length_of_stay":
             row["length_of_stay"],
@@ -67,29 +55,26 @@ for index, row in data.iterrows():
         "previous_inpatient_admissions":
             row["previous_inpatient_admissions"],
 
-        "previous_emergency_visits":
-            row["previous_emergency_visits"],
+        "admissions_last_30_days":
+            row["admissions_last_30_days"],
 
-        "previous_encounters":
-            row["previous_encounters"],
+        "admissions_last_90_days":
+            row["admissions_last_90_days"],
+
+        "admissions_last_365_days":
+            row["admissions_last_365_days"],
+
+        "days_since_last_inpatient_admission":
+            row["days_since_last_inpatient_admission"],
+
+        "has_prior_inpatient_admission":
+            row["has_prior_inpatient_admission"],
+
+        "prior_readmissions_last_365_days":
+            row["prior_readmissions_last_365_days"],
 
         "condition_count":
             row["condition_count"],
-
-        "diabetes":
-            row["diabetes"],
-
-        "hypertension":
-            row["hypertension"],
-
-        "heart_failure":
-            row["heart_failure"],
-
-        "kidney_disease":
-            row["kidney_disease"],
-
-        "chronic_lung_disease":
-            row["chronic_lung_disease"],
 
         "medication_count":
             row["medication_count"],
@@ -97,23 +82,17 @@ for index, row in data.iterrows():
         "procedure_count":
             row["procedure_count"],
 
+        "diabetes":
+            row["diabetes"],
+
+        "hypertension":
+            row["hypertension"],
+
+        "kidney_disease":
+            row["kidney_disease"],
+
         "bmi":
             row["bmi"],
-
-        "systolic_bp":
-            row["systolic_bp"],
-
-        "diastolic_bp":
-            row["diastolic_bp"],
-
-        "heart_rate":
-            row["heart_rate"],
-
-        "respiratory_rate":
-            row["respiratory_rate"],
-
-        "glucose":
-            row["glucose"]
     }
 
 
@@ -132,12 +111,22 @@ for index, row in data.iterrows():
 
             "readmission_probability":
                 prediction[
-                    "calibrated_probability"
+                    "probability"
                 ],
 
             "readmission_probability_percent":
                 prediction[
                     "probability_percent"
+                ],
+
+            "raw_readmission_probability":
+                prediction[
+                    "raw_probability"
+                ],
+
+            "raw_readmission_probability_percent":
+                prediction[
+                    "raw_probability_percent"
                 ],
 
             "risk_level":
@@ -153,13 +142,18 @@ for index, row in data.iterrows():
             "actual_readmitted_30_days":
                 row[
                     "readmitted_30_days"
-                ]
+                ],
         }
     )
 
 
-    # Progress update every 500 rows
-    if (index + 1) % 500 == 0:
+    # --------------------------------------------------------
+    # PROGRESS
+    # --------------------------------------------------------
+
+    if (
+        index + 1
+    ) % 500 == 0:
 
         print(
             "Scored",
@@ -178,37 +172,62 @@ registry = pd.DataFrame(
 
 
 # ============================================================
-# ADD USEFUL PATIENT CONTEXT
+# ADD PATIENT CONTEXT
 # ============================================================
 
 context_columns = [
     "encounter_id",
+
     "age_at_admission",
     "gender",
+
     "length_of_stay",
+
     "previous_inpatient_admissions",
     "previous_emergency_visits",
     "previous_encounters",
+
+    "admissions_last_30_days",
+    "admissions_last_90_days",
+    "admissions_last_365_days",
+
+    "days_since_last_inpatient_admission",
+    "has_prior_inpatient_admission",
+    "prior_readmissions_last_365_days",
+
     "condition_count",
+
     "diabetes",
     "hypertension",
     "heart_failure",
     "kidney_disease",
     "chronic_lung_disease",
+
     "medication_count",
     "procedure_count",
+
     "bmi",
+
     "systolic_bp",
     "diastolic_bp",
+
     "heart_rate",
     "respiratory_rate",
-    "glucose"
+
+    "glucose",
+]
+
+
+available_context_columns = [
+    column
+    for column in context_columns
+    if column in data.columns
 ]
 
 
 registry = registry.merge(
     data[
-        context_columns
+        available_context_columns
     ],
     on="encounter_id",
     how="left"
@@ -219,11 +238,15 @@ registry = registry.merge(
 # SORT HIGHEST RISK FIRST
 # ============================================================
 
-registry = registry.sort_values(
-    by="readmission_probability",
-    ascending=False
-).reset_index(
-    drop=True
+registry = (
+    registry
+    .sort_values(
+        by="readmission_probability",
+        ascending=False
+    )
+    .reset_index(
+        drop=True
+    )
 )
 
 
@@ -240,7 +263,9 @@ print("=" * 60)
 print()
 
 print("Registry shape:")
-print(registry.shape)
+print(
+    registry.shape
+)
 
 print()
 
@@ -275,14 +300,44 @@ print(
 
 print()
 
+print("Average raw model risk:")
+print(
+    round(
+        registry[
+            "raw_readmission_probability_percent"
+        ].mean(),
+        2
+    ),
+    "%"
+)
+
+print()
+
+print("Observed readmission rate:")
+print(
+    round(
+        registry[
+            "actual_readmitted_30_days"
+        ].mean()
+        * 100,
+        2
+    ),
+    "%"
+)
+
+print()
+
 print("Top 10 highest-risk encounters:")
+
 print(
     registry[
         [
             "patient_id",
             "readmission_probability_percent",
             "risk_level",
-            "intervention_recommended"
+            "intervention_recommended",
+            "admissions_last_90_days",
+            "prior_readmissions_last_365_days",
         ]
     ].head(10)
 )
@@ -298,7 +353,7 @@ registry.to_csv(
 )
 
 
-print()     
+print()
 
 print("=" * 60)
 print("PATIENT REGISTRY SAVED")
@@ -306,4 +361,6 @@ print("=" * 60)
 
 print()
 
-print(OUTPUT_PATH)
+print(
+    OUTPUT_PATH
+)

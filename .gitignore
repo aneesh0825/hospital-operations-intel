@@ -1,8 +1,10 @@
-src/__pycache__/
+.venv/
 __pycache__/
 *.pyc
 
+# Large/intermediate data
 data/processed/synthea_filtered_observations.csv
+data/processed/experiments/
 
-.venv/
-.vscode/
+# Experimental model artifacts
+models/experiments/

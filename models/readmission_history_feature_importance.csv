@@ -1,0 +1,17 @@
+feature,importance
+admissions_last_365_days,0.43256423
+prior_readmissions_last_365_days,0.21084838
+days_since_last_inpatient_admission,0.13777414
+admissions_last_90_days,0.068970084
+age_at_admission,0.02155674
+procedure_count,0.018566597
+length_of_stay,0.017854039
+admissions_last_30_days,0.015463607
+condition_count,0.014337489
+medication_count,0.011430554
+bmi,0.010599849
+previous_inpatient_admissions,0.0099521335
+hypertension,0.009579823
+has_prior_inpatient_admission,0.0077604004
+diabetes,0.0075430376
+kidney_disease,0.005198961
