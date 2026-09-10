@@ -1,0 +1,8 @@
+src/__pycache__/
+__pycache__/
+*.pyc
+
+data/processed/synthea_filtered_observations.csv
+
+.venv/
+.vscode/

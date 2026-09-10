@@ -1,0 +1,23 @@
+[
+    "age_at_admission",
+    "length_of_stay",
+    "previous_inpatient_admissions",
+    "previous_emergency_visits",
+    "previous_encounters",
+    "condition_count",
+    "diabetes",
+    "hypertension",
+    "heart_failure",
+    "kidney_disease",
+    "chronic_lung_disease",
+    "medication_count",
+    "procedure_count",
+    "bmi",
+    "diastolic_bp",
+    "glucose",
+    "heart_rate",
+    "respiratory_rate",
+    "systolic_bp",
+    "gender_F",
+    "gender_M"
+]
