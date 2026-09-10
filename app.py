@@ -1242,35 +1242,56 @@ if page == "Operations Overview":
 
     section_header(
         "Priority Worklist",
-        "Review and search the highest-risk patient encounters.",
+        "Filter, review, and search patient encounters by modeled risk.",
     )
 
-    filter_col1, filter_col2 = st.columns(
-        [0.55, 0.45],
+
+    # --------------------------------------------------------
+    # FILTERS
+    # --------------------------------------------------------
+
+    filter_col1, filter_col2, filter_col3 = st.columns(
+        [0.34, 0.33, 0.33],
         gap="medium",
     )
 
+
     with filter_col1:
 
-        worklist_filter = st.segmented_control(
-            "Filter",
-            options=[
-                "All",
-                "Review Recommended",
-                "High Risk",
+        risk_filter = st.selectbox(
+            "Risk Tier",
+            [
+                "All Risk Tiers",
+                "High",
+                "Moderate",
+                "Low",
             ],
-            default="All",
-            label_visibility="collapsed",
         )
+
 
     with filter_col2:
 
-        patient_search = st.text_input(
-            "Search patient",
-            placeholder="Search patient ID...",
-            label_visibility="collapsed",
+        review_filter = st.selectbox(
+            "Review Status",
+            [
+                "All Review Statuses",
+                "Recommended",
+                "Not Flagged",
+            ],
         )
 
+
+    with filter_col3:
+
+        patient_search = st.text_input(
+            "Patient Search",
+            placeholder="Search patient ID...",
+        )
+
+
+    # --------------------------------------------------------
+    # BUILD UNIQUE PATIENT WORKLIST
+    # --------------------------------------------------------
 
     unique_priority = (
         registry
@@ -1286,25 +1307,11 @@ if page == "Operations Overview":
     )
 
 
-    if (
-        worklist_filter
-        == "Review Recommended"
-    ):
+    # --------------------------------------------------------
+    # APPLY RISK FILTER
+    # --------------------------------------------------------
 
-        unique_priority = (
-            unique_priority[
-                unique_priority[
-                    "intervention_recommended"
-                ]
-                == True
-            ]
-        )
-
-
-    elif (
-        worklist_filter
-        == "High Risk"
-    ):
+    if risk_filter == "High":
 
         unique_priority = (
             unique_priority[
@@ -1316,6 +1323,62 @@ if page == "Operations Overview":
         )
 
 
+    elif risk_filter == "Moderate":
+
+        unique_priority = (
+            unique_priority[
+                unique_priority[
+                    "risk_level"
+                ]
+                == "MODERATE"
+            ]
+        )
+
+
+    elif risk_filter == "Low":
+
+        unique_priority = (
+            unique_priority[
+                unique_priority[
+                    "risk_level"
+                ]
+                == "LOW"
+            ]
+        )
+
+
+    # --------------------------------------------------------
+    # APPLY REVIEW FILTER
+    # --------------------------------------------------------
+
+    if review_filter == "Recommended":
+
+        unique_priority = (
+            unique_priority[
+                unique_priority[
+                    "intervention_recommended"
+                ]
+                == True
+            ]
+        )
+
+
+    elif review_filter == "Not Flagged":
+
+        unique_priority = (
+            unique_priority[
+                unique_priority[
+                    "intervention_recommended"
+                ]
+                == False
+            ]
+        )
+
+
+    # --------------------------------------------------------
+    # CREATE DISPLAY PATIENT ID
+    # --------------------------------------------------------
+
     unique_priority[
         "Patient"
     ] = (
@@ -1326,6 +1389,10 @@ if page == "Operations Overview":
         )
     )
 
+
+    # --------------------------------------------------------
+    # APPLY PATIENT SEARCH
+    # --------------------------------------------------------
 
     if patient_search:
 
@@ -1348,6 +1415,19 @@ if page == "Operations Overview":
             ]
         )
 
+
+    # --------------------------------------------------------
+    # MATCH COUNT
+    # --------------------------------------------------------
+
+    st.caption(
+        f"{len(unique_priority):,} patients match the current filters"
+    )
+
+
+    # --------------------------------------------------------
+    # FORMAT DISPLAY COLUMNS
+    # --------------------------------------------------------
 
     unique_priority[
         "Risk (%)"
@@ -1395,7 +1475,7 @@ if page == "Operations Overview":
             "previous_emergency_visits",
             "Conditions",
         ]
-    ].head(15).copy()
+    ].head(20).copy()
 
 
     queue = queue.rename(
@@ -1412,11 +1492,15 @@ if page == "Operations Overview":
     )
 
 
+    # --------------------------------------------------------
+    # WORKLIST TABLE
+    # --------------------------------------------------------
+
     st.dataframe(
         queue,
         use_container_width=True,
         hide_index=True,
-        height=430,
+        height=520,
 
         column_config={
             "Risk (%)":
@@ -1429,6 +1513,10 @@ if page == "Operations Overview":
         },
     )
 
+
+    # --------------------------------------------------------
+    # MODEL VALIDATION
+    # --------------------------------------------------------
 
     with st.expander(
         "Model validation"
