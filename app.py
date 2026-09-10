@@ -413,38 +413,48 @@ label:has(input:checked) {
     border: 1px solid rgba(148, 163, 184, 0.12);
     border-radius: 12px;
 
-    padding: 0.78rem 0.9rem;
-    margin-bottom: 0.5rem;
+    padding: 0.9rem 1rem;
+    margin-bottom: 0.55rem;
 }
 
 .driver-top {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 1rem;
 }
 
 .driver-feature {
     color: #f8fafc;
-    font-size: 0.83rem;
+    font-size: 0.85rem;
     font-weight: 700;
 }
 
 .driver-up {
     color: #fb7185;
-    font-size: 0.7rem;
+    font-size: 0.69rem;
     font-weight: 700;
 }
 
 .driver-down {
     color: #4ade80;
-    font-size: 0.7rem;
+    font-size: 0.69rem;
     font-weight: 700;
 }
 
-.driver-meta {
-    color: #64748b;
-    font-size: 0.69rem;
-    margin-top: 0.25rem;
+.driver-value {
+    color: #dbeafe;
+    font-size: 0.78rem;
+    font-weight: 650;
+    margin-top: 0.38rem;
+}
+
+.driver-reasoning {
+    color: #94a3b8;
+    font-size: 0.75rem;
+    line-height: 1.5;
+    margin-top: 0.32rem;
+    max-width: 960px;
 }
 
 
@@ -613,42 +623,264 @@ def metric_card(
 
 def render_drivers(drivers):
 
+    explanations = {
+        "Previous inpatient admissions":
+            "This patient's history of prior hospitalizations was an important signal in the model's estimate of future readmission risk.",
+
+        "Previous emergency visits":
+            "Prior emergency department use contributed to the prediction as part of the patient's recent healthcare utilization pattern.",
+
+        "Condition burden":
+            "The number of documented health conditions contributed to the model's estimate of overall clinical complexity.",
+
+        "Procedure count":
+            "The number of recorded procedures contributed to the model's estimate of treatment complexity during this encounter.",
+
+        "Heart rate":
+            "This heart rate influenced the prediction based on patterns the model learned from similar encounters.",
+
+        "BMI":
+            "This BMI contributed to the prediction based on patterns observed in the model's training data.",
+
+        "Heart failure":
+            "Heart failure status influenced the prediction when considered alongside the patient's other characteristics.",
+
+        "Kidney disease":
+            "Kidney disease status contributed to the patient's modeled clinical risk profile.",
+
+        "Diabetes":
+            "Diabetes status contributed to the patient's modeled clinical risk profile.",
+
+        "Hypertension":
+            "Hypertension status contributed to the prediction as part of the patient's broader clinical profile.",
+
+        "Chronic lung disease":
+            "Chronic lung disease status contributed to the model's estimate of clinical complexity.",
+
+        "Length of stay":
+            "The duration of this hospitalization influenced the prediction based on patterns learned from prior encounters.",
+
+        "Medication count":
+            "The number of medications contributed to the model's estimate of treatment and clinical complexity.",
+
+        "Age":
+            "The patient's age influenced the prediction based on patterns learned across different age groups.",
+
+        "Respiratory rate":
+            "This respiratory rate influenced the prediction based on patterns observed in similar encounters.",
+
+        "Glucose":
+            "This glucose measurement contributed to the prediction as part of the available clinical information.",
+
+        "Systolic blood pressure":
+            "This systolic blood pressure measurement contributed to the prediction based on patterns learned by the model.",
+
+        "Diastolic blood pressure":
+            "This diastolic blood pressure measurement contributed to the prediction based on patterns learned by the model.",
+
+        "Previous encounters":
+            "The patient's prior healthcare encounters contributed to the model's estimate of readmission risk.",
+    }
+
+    units = {
+        "Previous inpatient admissions":
+            "prior admissions",
+
+        "Previous emergency visits":
+            "ED visits",
+
+        "Previous encounters":
+            "prior encounters",
+
+        "Condition burden":
+            "documented conditions",
+
+        "Procedure count":
+            "procedures",
+
+        "Medication count":
+            "medications",
+
+        "Heart rate":
+            "bpm",
+
+        "Length of stay":
+            "days",
+
+        "Age":
+            "years",
+
+        "Respiratory rate":
+            "breaths/min",
+
+        "Glucose":
+            "mg/dL",
+
+        "Systolic blood pressure":
+            "mmHg",
+
+        "Diastolic blood pressure":
+            "mmHg",
+
+        "BMI":
+            "",
+    }
+
+    binary_features = {
+        "Heart failure",
+        "Kidney disease",
+        "Diabetes",
+        "Hypertension",
+        "Chronic lung disease",
+    }
+
     for driver in drivers:
 
-        if driver["direction"] == "increases risk":
-            direction_class = "driver-up"
-            direction_label = "↑ INCREASES RISK"
+        feature = driver["feature"]
+        direction = driver["direction"]
 
-        elif driver["direction"] == "decreases risk":
+        if direction == "increases risk":
+
+            direction_class = "driver-up"
+            direction_label = "↑ PUSHED PREDICTION HIGHER"
+
+        elif direction == "decreases risk":
+
             direction_class = "driver-down"
-            direction_label = "↓ DECREASES RISK"
+            direction_label = "↓ PUSHED PREDICTION LOWER"
 
         else:
+
             direction_class = ""
             direction_label = "NEUTRAL"
 
-        try:
-            display_value = round(
-                float(driver["value"]),
-                1,
+        raw_value = driver["value"]
+
+        if feature in binary_features:
+
+            try:
+                display_value = (
+                    "Present"
+                    if float(raw_value) == 1
+                    else "Not present"
+                )
+            except Exception:
+                display_value = str(raw_value)
+
+        else:
+
+            try:
+                number = round(
+                    float(raw_value),
+                    1,
+                )
+            except Exception:
+                number = raw_value
+
+            unit = units.get(
+                feature,
+                "",
             )
-        except Exception:
-            display_value = driver["value"]
+
+            if unit:
+                display_value = (
+                    f"{number} {unit}"
+                )
+            else:
+                display_value = str(
+                    number
+                )
+
+        explanation = explanations.get(
+            feature,
+            "This factor influenced the prediction based on patterns learned by the model.",
+        )
 
         st.markdown(
             (
                 '<div class="driver-card">'
+
                 '<div class="driver-top">'
-                f'<div class="driver-feature">{driver["feature"]}</div>'
+                f'<div class="driver-feature">{feature}</div>'
                 f'<div class="{direction_class}">{direction_label}</div>'
                 '</div>'
-                '<div class="driver-meta">'
-                f'Patient value: {display_value} · '
-                f'SHAP impact: {driver["impact"]:.3f}'
+
+                '<div class="driver-value">'
+                f'{display_value}'
                 '</div>'
+
+                '<div class="driver-reasoning">'
+                f'{explanation}'
+                '</div>'
+
                 '</div>'
             ),
             unsafe_allow_html=True,
+        )
+
+
+def factor_definitions():
+
+    with st.expander(
+        "What do these factors mean?"
+    ):
+
+        st.markdown(
+            """
+**Previous inpatient admissions**  
+The number of hospital admissions recorded before the current encounter.
+
+**Previous emergency visits**  
+The number of prior emergency department visits recorded for the patient.
+
+**Previous encounters**  
+The total number of prior healthcare encounters available in the patient's history.
+
+**Condition burden**  
+The total number of documented health conditions associated with the patient.
+
+**Procedure count**  
+The number of procedures recorded during the hospitalization or recent course of care represented by the encounter.
+
+**Medication count**  
+The number of medications associated with the patient's treatment record.
+
+**Length of stay**  
+The number of days the patient remained hospitalized during the current encounter.
+
+**BMI**  
+Body mass index, a measurement calculated from height and weight.
+
+**Heart rate**  
+The patient's measured heart rate in beats per minute.
+
+**Respiratory rate**  
+The patient's measured number of breaths per minute.
+
+**Systolic blood pressure**  
+The upper blood pressure measurement, representing pressure when the heart contracts.
+
+**Diastolic blood pressure**  
+The lower blood pressure measurement, representing pressure when the heart relaxes.
+
+**Glucose**  
+The patient's recorded blood glucose measurement.
+
+**Diabetes**  
+Whether diabetes is documented in the patient's available clinical history.
+
+**Hypertension**  
+Whether hypertension is documented in the patient's available clinical history.
+
+**Heart failure**  
+Whether heart failure is documented in the patient's available clinical history.
+
+**Kidney disease**  
+Whether kidney disease is documented in the patient's available clinical history.
+
+**Chronic lung disease**  
+Whether chronic lung disease is documented in the patient's available clinical history.
+"""
         )
 
 
@@ -662,10 +894,13 @@ def get_registry_example(
 ):
 
     candidates = registry[
-        registry["risk_level"] == risk_level
+        registry["risk_level"]
+        == risk_level
     ].copy()
 
-    candidates["distance_from_target"] = (
+    candidates[
+        "distance_from_target"
+    ] = (
         candidates[
             "readmission_probability_percent"
         ]
@@ -674,7 +909,9 @@ def get_registry_example(
 
     return (
         candidates
-        .sort_values("distance_from_target")
+        .sort_values(
+            "distance_from_target"
+        )
         .iloc[0]
     )
 
@@ -706,7 +943,9 @@ def row_to_defaults(row):
         "age":
             int(
                 safe_number(
-                    row["age_at_admission"],
+                    row[
+                        "age_at_admission"
+                    ],
                     65,
                 )
             ),
@@ -717,7 +956,9 @@ def row_to_defaults(row):
         "los":
             float(
                 safe_number(
-                    row["length_of_stay"],
+                    row[
+                        "length_of_stay"
+                    ],
                     5.0,
                 )
             ),
@@ -745,7 +986,9 @@ def row_to_defaults(row):
         "encounters":
             int(
                 safe_number(
-                    row["previous_encounters"],
+                    row[
+                        "previous_encounters"
+                    ],
                     0,
                 )
             ),
@@ -753,7 +996,9 @@ def row_to_defaults(row):
         "conditions":
             int(
                 safe_number(
-                    row["condition_count"],
+                    row[
+                        "condition_count"
+                    ],
                     0,
                 )
             ),
@@ -761,7 +1006,9 @@ def row_to_defaults(row):
         "medications":
             int(
                 safe_number(
-                    row["medication_count"],
+                    row[
+                        "medication_count"
+                    ],
                     0,
                 )
             ),
@@ -769,22 +1016,40 @@ def row_to_defaults(row):
         "procedures":
             int(
                 safe_number(
-                    row["procedure_count"],
+                    row[
+                        "procedure_count"
+                    ],
                     0,
                 )
             ),
 
         "diabetes":
-            bool(row["diabetes"]),
+            bool(
+                row[
+                    "diabetes"
+                ]
+            ),
 
         "hypertension":
-            bool(row["hypertension"]),
+            bool(
+                row[
+                    "hypertension"
+                ]
+            ),
 
         "heart_failure":
-            bool(row["heart_failure"]),
+            bool(
+                row[
+                    "heart_failure"
+                ]
+            ),
 
         "kidney_disease":
-            bool(row["kidney_disease"]),
+            bool(
+                row[
+                    "kidney_disease"
+                ]
+            ),
 
         "lung_disease":
             bool(
@@ -796,7 +1061,9 @@ def row_to_defaults(row):
         "bmi":
             float(
                 safe_number(
-                    row["bmi"],
+                    row[
+                        "bmi"
+                    ],
                     28.1,
                 )
             ),
@@ -805,7 +1072,9 @@ def row_to_defaults(row):
             int(
                 round(
                     safe_number(
-                        row["systolic_bp"],
+                        row[
+                            "systolic_bp"
+                        ],
                         117,
                     )
                 )
@@ -815,7 +1084,9 @@ def row_to_defaults(row):
             int(
                 round(
                     safe_number(
-                        row["diastolic_bp"],
+                        row[
+                            "diastolic_bp"
+                        ],
                         78,
                     )
                 )
@@ -825,7 +1096,9 @@ def row_to_defaults(row):
             int(
                 round(
                     safe_number(
-                        row["heart_rate"],
+                        row[
+                            "heart_rate"
+                        ],
                         81,
                     )
                 )
@@ -835,7 +1108,9 @@ def row_to_defaults(row):
             int(
                 round(
                     safe_number(
-                        row["respiratory_rate"],
+                        row[
+                            "respiratory_rate"
+                        ],
                         14,
                     )
                 )
@@ -844,7 +1119,9 @@ def row_to_defaults(row):
         "glucose":
             float(
                 safe_number(
-                    row["glucose"],
+                    row[
+                        "glucose"
+                    ],
                     84.2,
                 )
             ),
@@ -857,7 +1134,9 @@ def row_to_defaults(row):
             ),
 
         "source_risk_level":
-            row["risk_level"],
+            row[
+                "risk_level"
+            ],
     }
 
 
@@ -1112,7 +1391,9 @@ if page == "Operations Overview":
         )
 
         risk_chart = (
-            alt.Chart(risk_df)
+            alt.Chart(
+                risk_df
+            )
             .mark_bar(
                 cornerRadiusEnd=7,
                 size=34,
@@ -1165,6 +1446,7 @@ if page == "Operations Overview":
 
                 tooltip=[
                     "Risk Tier",
+
                     alt.Tooltip(
                         "Encounters:Q",
                         format=",",
@@ -1246,10 +1528,6 @@ if page == "Operations Overview":
     )
 
 
-    # --------------------------------------------------------
-    # FILTERS
-    # --------------------------------------------------------
-
     filter_col1, filter_col2, filter_col3 = st.columns(
         [0.34, 0.33, 0.33],
         gap="medium",
@@ -1289,10 +1567,6 @@ if page == "Operations Overview":
         )
 
 
-    # --------------------------------------------------------
-    # BUILD UNIQUE PATIENT WORKLIST
-    # --------------------------------------------------------
-
     unique_priority = (
         registry
         .sort_values(
@@ -1306,10 +1580,6 @@ if page == "Operations Overview":
         .copy()
     )
 
-
-    # --------------------------------------------------------
-    # APPLY RISK FILTER
-    # --------------------------------------------------------
 
     if risk_filter == "High":
 
@@ -1347,10 +1617,6 @@ if page == "Operations Overview":
         )
 
 
-    # --------------------------------------------------------
-    # APPLY REVIEW FILTER
-    # --------------------------------------------------------
-
     if review_filter == "Recommended":
 
         unique_priority = (
@@ -1375,10 +1641,6 @@ if page == "Operations Overview":
         )
 
 
-    # --------------------------------------------------------
-    # CREATE DISPLAY PATIENT ID
-    # --------------------------------------------------------
-
     unique_priority[
         "Patient"
     ] = (
@@ -1389,10 +1651,6 @@ if page == "Operations Overview":
         )
     )
 
-
-    # --------------------------------------------------------
-    # APPLY PATIENT SEARCH
-    # --------------------------------------------------------
 
     if patient_search:
 
@@ -1416,18 +1674,10 @@ if page == "Operations Overview":
         )
 
 
-    # --------------------------------------------------------
-    # MATCH COUNT
-    # --------------------------------------------------------
-
     st.caption(
         f"{len(unique_priority):,} patients match the current filters"
     )
 
-
-    # --------------------------------------------------------
-    # FORMAT DISPLAY COLUMNS
-    # --------------------------------------------------------
 
     unique_priority[
         "Risk (%)"
@@ -1475,7 +1725,9 @@ if page == "Operations Overview":
             "previous_emergency_visits",
             "Conditions",
         ]
-    ].head(20).copy()
+    ].head(
+        20
+    ).copy()
 
 
     queue = queue.rename(
@@ -1491,10 +1743,6 @@ if page == "Operations Overview":
         }
     )
 
-
-    # --------------------------------------------------------
-    # WORKLIST TABLE
-    # --------------------------------------------------------
 
     st.dataframe(
         queue,
@@ -1514,15 +1762,13 @@ if page == "Operations Overview":
     )
 
 
-    # --------------------------------------------------------
-    # MODEL VALIDATION
-    # --------------------------------------------------------
-
     with st.expander(
         "Model validation"
     ):
 
-        v1, v2 = st.columns(2)
+        v1, v2 = st.columns(
+            2
+        )
 
         with v1:
 
@@ -1556,6 +1802,7 @@ elif page == "Patient Review":
         "Explore patient risk, utilization, clinical context, and model drivers.",
     )
 
+
     patient_ids = (
         registry[
             "patient_id"
@@ -1565,26 +1812,34 @@ elif page == "Patient Review":
         .tolist()
     )
 
+
     patient_lookup = {
         short_patient_id(
             patient_id
-        ): patient_id
+        ):
+            patient_id
 
-        for patient_id in patient_ids
+        for patient_id
+        in patient_ids
     }
 
-    selected_label = st.selectbox(
-        "Search Patient",
-        list(
-            patient_lookup.keys()
-        ),
+
+    selected_label = (
+        st.selectbox(
+            "Search Patient",
+            list(
+                patient_lookup.keys()
+            ),
+        )
     )
+
 
     selected_patient = (
         patient_lookup[
             selected_label
         ]
     )
+
 
     patient_history = (
         registry[
@@ -1600,8 +1855,11 @@ elif page == "Patient Review":
         .copy()
     )
 
+
     patient = (
-        patient_history.iloc[0]
+        patient_history.iloc[
+            0
+        ]
     )
 
 
@@ -1614,6 +1872,7 @@ elif page == "Patient Review":
         gap="medium",
     )
 
+
     with c1:
 
         metric_card(
@@ -1622,6 +1881,7 @@ elif page == "Patient Review":
             "Calibrated probability",
             "metric-blue",
         )
+
 
     with c2:
 
@@ -1633,6 +1893,7 @@ elif page == "Patient Review":
             "Population classification",
             "metric-purple",
         )
+
 
     with c3:
 
@@ -1653,6 +1914,7 @@ elif page == "Patient Review":
             "metric-cyan",
         )
 
+
     with c4:
 
         metric_card(
@@ -1666,27 +1928,35 @@ elif page == "Patient Review":
             "metric-pink",
         )
 
+
     st.write("")
 
 
     # --------------------------------------------------------
-    # SHAP
+    # DRIVER EXPLANATIONS
     # --------------------------------------------------------
 
     section_header(
         "Why This Patient Scored This Way",
-        "Patient-specific SHAP contributions from the XGBoost model.",
+        "The strongest patient-specific contributors to the model prediction.",
     )
+
 
     patient_data = {
         "age_at_admission":
-            patient["age_at_admission"],
+            patient[
+                "age_at_admission"
+            ],
 
         "gender":
-            patient["gender"],
+            patient[
+                "gender"
+            ],
 
         "length_of_stay":
-            patient["length_of_stay"],
+            patient[
+                "length_of_stay"
+            ],
 
         "previous_inpatient_admissions":
             patient[
@@ -1709,16 +1979,24 @@ elif page == "Patient Review":
             ],
 
         "diabetes":
-            patient["diabetes"],
+            patient[
+                "diabetes"
+            ],
 
         "hypertension":
-            patient["hypertension"],
+            patient[
+                "hypertension"
+            ],
 
         "heart_failure":
-            patient["heart_failure"],
+            patient[
+                "heart_failure"
+            ],
 
         "kidney_disease":
-            patient["kidney_disease"],
+            patient[
+                "kidney_disease"
+            ],
 
         "chronic_lung_disease":
             patient[
@@ -1736,16 +2014,24 @@ elif page == "Patient Review":
             ],
 
         "bmi":
-            patient["bmi"],
+            patient[
+                "bmi"
+            ],
 
         "systolic_bp":
-            patient["systolic_bp"],
+            patient[
+                "systolic_bp"
+            ],
 
         "diastolic_bp":
-            patient["diastolic_bp"],
+            patient[
+                "diastolic_bp"
+            ],
 
         "heart_rate":
-            patient["heart_rate"],
+            patient[
+                "heart_rate"
+            ],
 
         "respiratory_rate":
             patient[
@@ -1753,8 +2039,11 @@ elif page == "Patient Review":
             ],
 
         "glucose":
-            patient["glucose"],
+            patient[
+                "glucose"
+            ],
     }
+
 
     try:
 
@@ -1770,10 +2059,11 @@ elif page == "Patient Review":
         )
 
         st.caption(
-            "SHAP values describe how individual features "
-            "influenced this model prediction. They do not "
-            "establish clinical causation."
+            "These contributors explain the model's prediction. "
+            "They do not establish that a factor causes or prevents readmission."
         )
+
+        factor_definitions()
 
     except Exception:
 
@@ -1810,10 +2100,12 @@ not a clinically validated treatment guideline.
 
     st.write("")
 
+
     utilization_col, clinical_col = st.columns(
         2,
         gap="large",
     )
+
 
     with utilization_col:
 
@@ -1937,6 +2229,7 @@ not a clinically validated treatment guideline.
         "Historical modeled risk and observed outcomes.",
     )
 
+
     encounter_table = patient_history[
         [
             "encounter_id",
@@ -1948,6 +2241,7 @@ not a clinically validated treatment guideline.
         ]
     ].copy()
 
+
     encounter_table[
         "Encounter"
     ] = (
@@ -1957,6 +2251,7 @@ not a clinically validated treatment guideline.
             short_encounter_id
         )
     )
+
 
     encounter_table[
         "Review Status"
@@ -1974,32 +2269,39 @@ not a clinically validated treatment guideline.
         )
     )
 
-    encounter_table = encounter_table[
-        [
-            "Encounter",
-            "readmission_probability_percent",
-            "risk_level",
-            "Review Status",
-            "actual_readmitted_30_days",
-            "length_of_stay",
+
+    encounter_table = (
+        encounter_table[
+            [
+                "Encounter",
+                "readmission_probability_percent",
+                "risk_level",
+                "Review Status",
+                "actual_readmitted_30_days",
+                "length_of_stay",
+            ]
         ]
-    ]
-
-    encounter_table = encounter_table.rename(
-        columns={
-            "readmission_probability_percent":
-                "Risk (%)",
-
-            "risk_level":
-                "Risk Tier",
-
-            "actual_readmitted_30_days":
-                "Readmitted",
-
-            "length_of_stay":
-                "LOS",
-        }
     )
+
+
+    encounter_table = (
+        encounter_table.rename(
+            columns={
+                "readmission_probability_percent":
+                    "Risk (%)",
+
+                "risk_level":
+                    "Risk Tier",
+
+                "actual_readmitted_30_days":
+                    "Readmitted",
+
+                "length_of_stay":
+                    "LOS",
+            }
+        )
+    )
+
 
     st.dataframe(
         encounter_table,
@@ -2039,14 +2341,17 @@ elif page == "Risk Assessment":
         "assessment_preset"
         not in st.session_state
     ):
+
         st.session_state[
             "assessment_preset"
         ] = "Custom"
+
 
     if (
         "preset_counter"
         not in st.session_state
     ):
+
         st.session_state[
             "preset_counter"
         ] = 0
@@ -2073,7 +2378,13 @@ elif page == "Risk Assessment":
         "Load a real synthetic encounter from the scored Synthea population.",
     )
 
-    b1, b2, b3, b4 = st.columns(4)
+
+    b1, b2, b3, b4 = (
+        st.columns(
+            4
+        )
+    )
+
 
     with b1:
 
@@ -2217,10 +2528,12 @@ elif page == "Risk Assessment":
         "Core patient and hospitalization information.",
     )
 
+
     p1, p2, p3 = st.columns(
         3,
         gap="medium",
     )
+
 
     with p1:
 
@@ -2229,7 +2542,9 @@ elif page == "Risk Assessment":
             min_value=0,
             max_value=120,
             value=int(
-                defaults["age"]
+                defaults[
+                    "age"
+                ]
             ),
             key=f"age_{key_suffix}",
         )
@@ -2266,7 +2581,9 @@ elif page == "Risk Assessment":
                 "Length of Stay (days)",
                 min_value=0.0,
                 value=float(
-                    defaults["los"]
+                    defaults[
+                        "los"
+                    ]
                 ),
                 step=0.5,
                 key=f"los_{key_suffix}",
@@ -2284,6 +2601,7 @@ elif page == "Risk Assessment":
         "Recent Utilization",
         "Prior healthcare utilization available to the model.",
     )
+
 
     u1, u2, u3 = st.columns(
         3,
@@ -2355,6 +2673,7 @@ elif page == "Risk Assessment":
         "Clinical Conditions",
         "Select documented conditions for this patient.",
     )
+
 
     cc1, cc2, cc3 = st.columns(
         3,
@@ -2437,7 +2756,12 @@ elif page == "Risk Assessment":
         expanded=False,
     ):
 
-        t1, t2, t3 = st.columns(3)
+        t1, t2, t3 = (
+            st.columns(
+                3
+            )
+        )
+
 
         with t1:
 
@@ -2457,6 +2781,7 @@ elif page == "Risk Assessment":
                 )
             )
 
+
         with t2:
 
             medication_count = (
@@ -2474,6 +2799,7 @@ elif page == "Risk Assessment":
                     ),
                 )
             )
+
 
         with t3:
 
@@ -2503,9 +2829,11 @@ elif page == "Risk Assessment":
         expanded=False,
     ):
 
-        v1, v2, v3 = st.columns(
-            3,
-            gap="medium",
+        v1, v2, v3 = (
+            st.columns(
+                3,
+                gap="medium",
+            )
         )
 
 
@@ -2598,20 +2926,22 @@ elif page == "Risk Assessment":
                 )
             )
 
-            glucose = st.number_input(
-                "Glucose",
-                min_value=20.0,
-                max_value=600.0,
-                value=float(
-                    defaults[
-                        "glucose"
-                    ]
-                ),
-                step=0.1,
-                key=(
-                    f"glucose_"
-                    f"{key_suffix}"
-                ),
+            glucose = (
+                st.number_input(
+                    "Glucose",
+                    min_value=20.0,
+                    max_value=600.0,
+                    value=float(
+                        defaults[
+                            "glucose"
+                        ]
+                    ),
+                    step=0.1,
+                    key=(
+                        f"glucose_"
+                        f"{key_suffix}"
+                    ),
+                )
             )
 
 
@@ -2620,6 +2950,7 @@ elif page == "Risk Assessment":
     # --------------------------------------------------------
 
     st.write("")
+
 
     analyze = st.button(
         "Analyze Readmission Risk",
@@ -2632,9 +2963,11 @@ elif page == "Risk Assessment":
 
         gender_code = (
             "F"
-            if gender == "Female"
+            if gender
+            == "Female"
             else "M"
         )
+
 
         patient_data = {
             "age_at_admission":
@@ -2659,16 +2992,24 @@ elif page == "Risk Assessment":
                 condition_count,
 
             "diabetes":
-                int(diabetes),
+                int(
+                    diabetes
+                ),
 
             "hypertension":
-                int(hypertension),
+                int(
+                    hypertension
+                ),
 
             "heart_failure":
-                int(heart_failure),
+                int(
+                    heart_failure
+                ),
 
             "kidney_disease":
-                int(kidney_disease),
+                int(
+                    kidney_disease
+                ),
 
             "chronic_lung_disease":
                 int(
@@ -2709,6 +3050,7 @@ elif page == "Risk Assessment":
                 )
             )
 
+
             drivers = (
                 explain_readmission(
                     patient_data,
@@ -2716,12 +3058,15 @@ elif page == "Risk Assessment":
                 )
             )
 
+
             st.write("")
+
 
             section_header(
                 "Risk Intelligence",
                 "Calibrated readmission prediction and review status.",
             )
+
 
             r1, r2, r3 = st.columns(
                 3,
@@ -2733,9 +3078,7 @@ elif page == "Risk Assessment":
 
                 metric_card(
                     "30-Day Risk",
-                    (
-                        f'{result["probability_percent"]}%'
-                    ),
+                    f'{result["probability_percent"]}%',
                     "Calibrated probability",
                     "metric-blue",
                 )
@@ -2834,15 +3177,19 @@ clinically validated treatment guideline.
                 "The strongest patient-specific contributors to the prediction.",
             )
 
+
             render_drivers(
                 drivers
             )
 
+
             st.caption(
-                "SHAP values describe the model's learned "
-                "prediction behavior. They do not establish "
-                "clinical causation."
+                "These contributors explain the model's prediction. "
+                "They do not establish that a factor causes or prevents readmission."
             )
+
+
+            factor_definitions()
 
 
             with st.expander(
