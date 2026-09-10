@@ -1,886 +1,359 @@
-\# Admitra
+# Admitra
 
+**History-aware machine learning for 30-day hospital readmission risk assessment**
 
+Admitra is an end-to-end machine learning project that estimates a patient's probability of hospital readmission within 30 days. It combines longitudinal healthcare utilization, clinical characteristics, calibrated XGBoost predictions, patient-specific explanations, and an interactive Streamlit application.
 
-\*\*A history-aware machine learning system for 30-day hospital readmission risk assessment\*\*
+The project uses synthetic electronic health record data generated with Synthea. It is intended to demonstrate applied machine learning, healthcare analytics, model validation, probability calibration, and explainable AI.
 
+> **Important:** Admitra is a portfolio and research project built with synthetic data. It is not a medical device and should not be used for clinical decision-making.
 
+## What Admitra Does
 
-Admitra is an end-to-end machine learning project that estimates a patient's probability of hospital readmission within 30 days. The system combines longitudinal healthcare utilization, clinical characteristics, calibrated XGBoost predictions, and patient-level explanations in an interactive Streamlit application.
+Hospital readmission risk depends on more than the current hospitalization. A patient's recent admission history and prior utilization can contain important information about future risk.
 
+Admitra therefore uses a history-aware approach. For each hospitalization, the model incorporates information available at or before that encounter, including recent admissions, prior readmissions, time since the previous inpatient admission, clinical burden, utilization, selected chronic conditions, age, BMI, and length of stay.
 
+The Streamlit application converts the model output into:
 
-The project was developed using synthetic patient data generated with Synthea and is intended as a demonstration of applied machine learning, healthcare analytics, model validation, and explainable AI.
+- a calibrated 30-day readmission probability
+- a Low, Moderate, or High risk level
+- an operational review recommendation
+- patient-specific risk drivers
+- a registry for reviewing scored encounters
 
+## Final Production Model
 
+The production model is an XGBoost binary classifier using **16 features**.
 
-> \*\*Important:\*\* Admitra is a portfolio and research project built with synthetic data. It is not a medical device and should not be used for clinical decision-making.
+### Longitudinal Patient History
 
+- Previous inpatient admissions
+- Admissions in the last 30 days
+- Admissions in the last 90 days
+- Admissions in the last 365 days
+- Days since last inpatient admission
+- Prior inpatient admission indicator
+- Prior readmissions in the last 365 days
 
+### Current Hospitalization and Clinical Utilization
 
-\---
+- Age at admission
+- Length of stay
+- Condition count
+- Medication count
+- Procedure count
+- BMI
 
+### Documented Conditions
 
+- Diabetes
+- Hypertension
+- Kidney disease
 
-\## Overview
+Recent utilization variables, especially admissions and prior readmissions during the previous year, emerged as the strongest predictive signals in the final model.
 
+## Leakage-Safe Validation
 
+A patient can have multiple hospitalizations. Randomly splitting individual encounters could place encounters from the same patient in both training and testing, creating information leakage.
 
-Hospital readmission risk is influenced not only by a patient's current hospitalization, but also by their recent healthcare utilization and prior readmission history.
+Admitra uses a **patient-level grouped train/test split** so that no patient in the held-out test set appears in the training set.
 
+| Item | Value |
+| --- | ---: |
+| Total hospitalizations | 11,225 |
+| Overall readmission rate | 15.02% |
+| Training encounters | 9,201 |
+| Held-out test encounters | 2,024 |
+| Unique held-out patients | 810 |
+| Patient overlap | 0 |
 
+The training procedure also accounts for class imbalance using XGBoost's `scale_pos_weight`.
 
-Admitra therefore uses a \*\*history-aware modeling approach\*\*. Instead of treating each hospitalization as an isolated event, the model incorporates information available before the index hospitalization, including:
-
-
-
-\- admissions within the previous 30, 90, and 365 days
-
-\- prior readmissions within the previous year
-
-\- time since the patient's previous inpatient admission
-
-\- cumulative inpatient history
-
-\- clinical burden
-
-\- medication and procedure utilization
-
-\- selected chronic conditions
-
-\- demographic and hospitalization characteristics
-
-
-
-The application converts the model output into a calibrated readmission probability, risk category, review recommendation, and patient-specific explanation.
-
-
-
-\---
-
-
-
-\## Final Model
-
-
-
-Admitra's production model is an \*\*XGBoost binary classifier\*\* using 16 features.
-
-
-
-\### Patient history
-
-
-
-\- Previous inpatient admissions
-
-\- Admissions in the last 30 days
-
-\- Admissions in the last 90 days
-
-\- Admissions in the last 365 days
-
-\- Days since last inpatient admission
-
-\- Prior inpatient admission indicator
-
-\- Prior readmissions in the last 365 days
-
-
-
-\### Current hospitalization and clinical utilization
-
-
-
-\- Age at admission
-
-\- Length of stay
-
-\- Condition count
-
-\- Medication count
-
-\- Procedure count
-
-\- BMI
-
-
-
-\### Documented conditions
-
-
-
-\- Diabetes
-
-\- Hypertension
-
-\- Kidney disease
-
-
-
-Recent utilization emerged as the strongest source of predictive information, particularly admissions and prior readmissions within the previous year.
-
-
-
-\---
-
-
-
-\## Model Development
-
-
-
-\### Leakage-safe patient splitting
-
-
-
-A single patient may have multiple hospitalizations in the dataset. Randomly splitting individual encounters could therefore place encounters belonging to the same patient in both the training and test sets.
-
-
-
-Admitra uses a \*\*patient-level grouped train/test split\*\* instead.
-
-
-
-Final production development dataset:
-
-
-
-\- \*\*11,225 hospitalizations\*\*
-
-\- \*\*15.02% overall readmission rate\*\*
-
-\- \*\*9,201 training encounters\*\*
-
-\- \*\*2,024 held-out test encounters\*\*
-
-\- \*\*0 overlapping patients between training and testing\*\*
-
-
-
-This prevents the model from being evaluated on patients it encountered during training.
-
-
-
-\### Class imbalance
-
-
-
-Because readmissions represent a minority of encounters, the training procedure accounts for class imbalance using XGBoost's `scale\_pos\_weight`.
-
-
-
-For the production training cohort:
-
-
-
-```text
-
-Scale pos weight: 5.484
-
-```
-
-
-
-\---
-
-
-
-\## Held-Out Performance
-
-
+## Held-Out Performance
 
 The final calibrated history-aware model achieved:
 
-
-
 | Metric | Result |
+| --- | ---: |
+| ROC-AUC | **0.932** |
+| PR-AUC | **0.754** |
+| Brier Score | **0.0559** |
+| Precision at operating threshold | **52.3%** |
+| Recall at operating threshold | **80.1%** |
+| F1 Score at operating threshold | **0.633** |
 
-|---|---:|
+The held-out population had an observed 30-day readmission rate of **13.19%**.
 
-| ROC-AUC | \*\*0.932\*\* |
+The mean calibrated predicted probability was **12.04%**, compared with the observed **13.19%** rate.
 
-| PR-AUC | \*\*0.754\*\* |
+## Probability Calibration
 
-| Brier Score | \*\*0.0559\*\* |
+Class weighting improved identification of readmissions, but the raw XGBoost probabilities were substantially higher than the observed event rate. Admitra therefore includes a separate probability-calibration stage.
 
-| Accuracy | \*\*87.7%\*\* |
+The production pipeline uses **sigmoid calibration** to transform the model's raw score into a more interpretable estimated probability while preserving ranking performance.
 
-| Precision | \*\*52.3%\*\* |
-
-| Recall | \*\*80.1%\*\* |
-
-| F1 Score | \*\*0.633\*\* |
-
-
-
-The held-out test population had an observed 30-day readmission rate of \*\*13.19%\*\*.
-
-
-
-After calibration, the model's mean predicted probability was \*\*12.04%\*\*, compared with the observed \*\*13.19%\*\* rate.
-
-
-
-\---
-
-
-
-\## Probability Calibration
-
-
-
-Class weighting improved the model's ability to identify readmissions but caused the raw XGBoost probabilities to systematically overestimate absolute risk.
-
-
-
-On out-of-fold training predictions:
-
-
+On the held-out validation population:
 
 ```text
-
-Actual readmission rate:       15.42%
-
-Mean raw probability:          30.32%
-
-Mean calibrated probability:   15.42%
-
+Observed readmission rate:    13.19%
+Mean calibrated probability:  12.04%
 ```
 
+This distinction is important: the raw XGBoost output is not presented directly to the user as the estimated clinical risk.
 
+## Operating Threshold
 
-Admitra evaluated both \*\*isotonic\*\* and \*\*sigmoid\*\* calibration.
+A 50% cutoff is not automatically appropriate for an imbalanced classification problem.
 
+Admitra selects an operational review threshold from grouped out-of-fold training predictions. The selection objective was to maximize F1 while maintaining recall of at least 70%.
 
-
-The production pipeline uses \*\*sigmoid calibration\*\*, providing substantially more interpretable probabilities while preserving the model's ranking performance.
-
-
-
-On the final held-out test set:
-
-
+The resulting production review threshold is:
 
 ```text
-
-Observed readmission rate:     13.19%
-
-Mean calibrated probability:   12.04%
-
-```
-
-
-
-\---
-
-
-
-\## Operating Threshold
-
-
-
-A probability of 50% is not automatically the appropriate decision threshold for an imbalanced healthcare classification problem.
-
-
-
-Admitra selects its operating threshold using grouped out-of-fold predictions from the training data.
-
-
-
-The selection rule was:
-
-
-
-> Highest F1 score while maintaining recall of at least 70%.
-
-
-
-This produced a production review threshold of:
-
-
-
-```text
-
 22%
-
 ```
 
-
-
-On the held-out test set, this threshold produced:
-
-
+At that threshold, held-out performance was:
 
 ```text
-
 Precision: 52.3%
-
 Recall:    80.1%
-
 F1:        0.633
-
 ```
 
+Crossing the threshold means that an encounter is recommended for review. It does **not** mean the model is declaring that the patient will be readmitted.
 
+## Risk Bands
 
-A patient exceeding the threshold is flagged for \*\*review\*\*, not automatically classified as someone who will be readmitted.
-
-
-
-\---
-
-
-
-\## Risk Bands
-
-
-
-The application separates estimated probability from the operational review decision.
-
-
-
-The calibrated risk bands are:
-
-
+Risk categorization is separate from the operational review threshold.
 
 ```text
-
 LOW       < 3.2%
-
-MODERATE  3.2% - 25.7%
-
+MODERATE  3.2% to 25.7%
 HIGH      > 25.7%
-
 ```
 
+The independent review threshold is **22%**.
 
+This allows the application to communicate estimated risk while separately representing the point at which an operational workflow would flag an encounter for additional review.
 
-The operational review threshold is independently set at \*\*22%\*\*.
+## Explainable Predictions
 
+Admitra uses **SHAP values** to explain individual predictions.
 
+For each scored patient, the application identifies the strongest contributors to the model output and shows whether each factor increased or decreased predicted risk.
 
-This means risk categorization and review recommendations serve related but different purposes.
+Common influential features include:
 
+- Admissions in the last 365 days
+- Prior readmissions in the last 365 days
+- Admissions in the last 90 days
+- Days since the last inpatient admission
+- Length of stay
+- Procedure and medication utilization
 
+SHAP values explain the behavior of the model. They should not be interpreted as evidence that a feature clinically causes readmission.
 
-\---
+## Patient Registry
 
+Admitra includes a patient registry containing scored hospital encounters.
 
+The registry supports:
 
-\## Explainable Predictions
+- ranking encounters by predicted readmission risk
+- identifying encounters that exceed the review threshold
+- reviewing risk categories
+- comparing predictions with observed outcomes
+- population-level dashboard analysis
 
+The current production registry contains **11,225 scored hospitalizations**.
 
+## Larger-Cohort Robustness Experiment
 
-Admitra uses \*\*SHAP values\*\* to explain individual model predictions.
+The final architecture was also tested on a separately generated, substantially larger Synthea population.
 
-
-
-For each patient, the application identifies the strongest contributors to the model's prediction and indicates whether each factor increased or decreased estimated readmission risk.
-
-
-
-Example factors may include:
-
-
+The second generation produced:
 
 ```text
-
-Admissions in last 365 days
-
-Prior readmissions in last 365 days
-
-Days since last inpatient admission
-
-Admissions in last 90 days
-
-Length of stay
-
-Procedure count
-
-```
-
-
-
-This allows the application to show more than a probability by providing insight into \*\*why the model produced that estimate\*\*.
-
-
-
-\---
-
-
-
-\## Patient Registry
-
-
-
-Admitra also includes a patient registry generated by scoring hospital encounters with the production model.
-
-
-
-The registry can be used to:
-
-
-
-\- rank encounters by predicted readmission risk
-
-\- identify patients exceeding the review threshold
-
-\- inspect risk categories
-
-\- compare predictions with observed outcomes
-
-\- support dashboard-level population analysis
-
-
-
-The production registry contains \*\*11,225 scored hospitalizations\*\*.
-
-
-
-\---
-
-
-
-\## Robustness Testing
-
-
-
-A second, independently generated Synthea population was used to investigate how the modeling approach behaved on a substantially larger synthetic cohort.
-
-
-
-The additional generation produced:
-
-
-
-```text
-
 28,764 synthetic patients
-
 1,691,624 encounters
-
 27,796 qualifying hospitalizations
-
 ```
 
-
-
-The same 16-feature architecture achieved:
-
-
+Using the same 16-feature architecture, performance was:
 
 | Cohort | ROC-AUC | PR-AUC |
+| --- | ---: | ---: |
+| Production development cohort | **0.932** | **0.754** |
+| Larger independent synthetic cohort | **0.883** | **0.549** |
 
-|---|---:|---:|
+The decrease is an important limitation. Performance on one generated population did not transfer perfectly to another synthetic population.
 
-| Production development cohort | \*\*0.932\*\* | \*\*0.754\*\* |
+The larger-cohort model was therefore retained as a robustness experiment rather than used to replace the production model.
 
-| Larger independent synthetic cohort | \*\*0.883\*\* | \*\*0.549\*\* |
+## Additional Feature Experiments
 
+Several additional clinical variables were investigated during development, including vital signs, glucose, feature-availability indicators, ischemic heart disease, and kidney failure.
 
-
-The decline demonstrates that performance on one synthetic population does not guarantee identical performance on another generated population.
-
-
-
-For this reason, the larger-cohort model was retained as an experiment rather than replacing the production model.
-
-
-
-\---
-
-
-
-\## Additional Feature Experiments
-
-
-
-Several additional clinical features were evaluated during development.
-
-
-
-These included:
-
-
-
-\- systolic blood pressure
-
-\- heart rate
-
-\- glucose
-
-\- vital-sign availability
-
-\- glucose availability
-
-\- ischemic heart disease
-
-\- end-stage kidney failure
-
-
-
-The larger-cohort baseline and an experimental model adding ischemic heart disease and kidney failure produced:
-
-
+An 18-feature experiment added ischemic heart disease and kidney failure to the larger-cohort model:
 
 | Model | ROC-AUC | PR-AUC |
+| --- | ---: | ---: |
+| 16-feature large-cohort model | 0.8828 | 0.5494 |
+| 18-feature large-cohort model | 0.8827 | 0.5501 |
 
-|---|---:|---:|
+The added diagnoses produced essentially no improvement, so they were excluded from the final production feature set.
 
-| 16-feature model | 0.8828 | 0.5494 |
+## Streamlit Application
 
-| 18-feature model | 0.8827 | 0.5501 |
+Admitra is presented through an interactive Streamlit interface with three primary views.
 
+### Command Center
 
+Provides a population-level view of the patient registry and summarizes risk distribution and review recommendations.
 
-The additional diagnoses provided essentially no improvement, so they were not added to the production model.
-
-
-
-This experimentation favored a smaller feature set when additional variables did not demonstrate meaningful held-out benefit.
-
-
-
-\---
-
-
-
-\## Application
-
-
-
-Admitra is presented through a Streamlit interface with three primary views.
-
-
-
-\### Command Center
-
-
-
-Provides a population-level view of the patient registry, including risk distribution, review recommendations, and operational summaries.
-
-
-
-\### Risk Assessment
-
-
+### Risk Assessment
 
 Allows a user to enter patient characteristics and utilization history and receive:
 
+- calibrated readmission probability
+- risk level
+- review recommendation
+- patient-specific risk drivers
 
+### Patient Registry
 
-\- calibrated 30-day readmission probability
+Provides encounter-level access to scored patients and their model outputs.
 
-\- risk level
-
-\- review recommendation
-
-\- patient-specific risk drivers
-
-
-
-\### Patient Registry
-
-
-
-Provides encounter-level access to scored patients and their predicted risks.
-
-
-
-\---
-
-
-
-\## Project Structure
-
-
+## Project Structure
 
 ```text
-
 hospital-operations-intel/
-
-│
-
-├── app.py
-
-│
-
-├── README.md
-
-│
-
-├── requirements.txt
-
-│
-
-├── .gitignore
-
-│
-
-├── data/
-
-│   └── processed/
-
-│       ├── admitra\_patient\_registry.csv
-
-│       ├── synthea\_readmission\_ml\_dataset\_v1.csv
-
-│       ├── synthea\_readmission\_ml\_dataset\_v2.csv
-
-│       └── synthea\_readmission\_ml\_dataset\_v3.csv
-
-│
-
-├── models/
-
-│   ├── readmission\_history\_calibrator.joblib
-
-│   ├── readmission\_history\_feature\_importance.csv
-
-│   ├── readmission\_history\_features.json
-
-│   ├── readmission\_history\_medians.json
-
-│   ├── readmission\_history\_risk\_bands.json
-
-│   ├── readmission\_history\_threshold.json
-
-│   ├── readmission\_history\_xgboost.joblib
-
-│   └── readmission\_history\_xgboost\_calibrated.joblib
-
-│
-
-├── src/
-
-│   ├── build\_patient\_registry.py
-
-│   ├── build\_synthea\_ml\_dataset.py
-
-│   ├── build\_synthea\_v2\_dataset.py
-
-│   ├── build\_synthea\_v3\_dataset.py
-
-│   ├── calibrate\_history\_model.py
-
-│   ├── calibrators.py
-
-│   ├── extract\_observation\_features.py
-
-│   ├── predict\_readmission.py
-
-│   ├── train\_history\_model.py
-
-│   └── validate\_history\_model.py
-
-│
-
-└── experiments/
-
-&#x20;   └── experimental and previous model-development scripts
-
+|
+|-- app.py
+|-- README.md
+|-- requirements.txt
+|-- .gitignore
+|
+|-- data/
+|   `-- processed/
+|       |-- admitra_patient_registry.csv
+|       |-- synthea_readmission_ml_dataset_v1.csv
+|       |-- synthea_readmission_ml_dataset_v2.csv
+|       `-- synthea_readmission_ml_dataset_v3.csv
+|
+|-- models/
+|   |-- readmission_history_calibrator.joblib
+|   |-- readmission_history_feature_importance.csv
+|   |-- readmission_history_features.json
+|   |-- readmission_history_medians.json
+|   |-- readmission_history_risk_bands.json
+|   |-- readmission_history_threshold.json
+|   |-- readmission_history_xgboost.joblib
+|   `-- readmission_history_xgboost_calibrated.joblib
+|
+|-- src/
+|   |-- build_patient_registry.py
+|   |-- build_synthea_ml_dataset.py
+|   |-- build_synthea_v2_dataset.py
+|   |-- build_synthea_v3_dataset.py
+|   |-- calibrate_history_model.py
+|   |-- calibrators.py
+|   |-- extract_observation_features.py
+|   |-- predict_readmission.py
+|   |-- train_history_model.py
+|   `-- validate_history_model.py
+|
+`-- experiments/
+    `-- experimental and previous model-development scripts
 ```
-
-
 
 Large intermediate datasets and experimental model artifacts are excluded from version control.
 
+## Running Admitra
 
+### 1. Create a virtual environment
 
-\---
+```powershell
+python -m venv .venv
+```
 
-
-
-\## Running Admitra
-
-
-
-\### 1. Create and activate a virtual environment
-
-
+### 2. Activate the environment
 
 Windows PowerShell:
 
-
-
 ```powershell
-
-python -m venv .venv
-
-.\\.venv\\Scripts\\Activate.ps1
-
+.\.venv\Scripts\Activate.ps1
 ```
 
-
-
-\### 2. Install dependencies
-
-
+### 3. Install dependencies
 
 ```powershell
-
 pip install -r requirements.txt
-
 ```
 
-
-
-\### 3. Launch the application
-
-
+### 4. Launch Admitra
 
 ```powershell
-
 python -m streamlit run app.py
-
 ```
 
+Streamlit will provide a local address for opening the application in a browser.
 
+## Technology
 
-Streamlit will provide a local address where the Admitra interface can be opened in a browser.
+- Python
+- Pandas
+- XGBoost
+- scikit-learn
+- SHAP
+- Streamlit
+- Synthea
+- Joblib
 
+## Data
 
+Admitra uses synthetic electronic health record data generated with **Synthea**.
 
-\---
+Synthetic data makes it possible to demonstrate an end-to-end healthcare machine learning workflow without using real patient records or protected health information.
 
+The synthetic nature of the data is also a major limitation. Relationships learned from Synthea should not be assumed to represent relationships in real clinical populations.
 
+## Limitations
 
-\## Technology
+Admitra is an experimental machine learning project, not a validated clinical prediction system.
 
+Key limitations include:
 
+- all patient records are synthetic
+- the model has not been externally validated on real-world hospital data
+- synthetic populations can contain relationships that differ from real clinical populations
+- performance decreased on a separately generated Synthea cohort
+- feature importance and SHAP values describe model behavior rather than clinical causation
+- the operating threshold has not been evaluated against real clinical costs, staffing constraints, or intervention workflows
+- predictions should not be interpreted as medical advice
 
-Admitra was developed with:
+Real-world deployment would require external validation, prospective testing, clinical review, fairness assessment, privacy and security controls, governance, ongoing monitoring, and any applicable regulatory review.
 
+## Development Workflow
 
+The project evolved through a sequence of increasingly rigorous modeling steps:
 
-\- \*\*Python\*\*
+1. Built encounter-level 30-day readmission labels.
+2. Integrated clinical and observation data.
+3. Engineered longitudinal patient-history features.
+4. Prevented patient leakage with grouped train/test splitting.
+5. Addressed class imbalance during model training.
+6. Calibrated raw model probabilities.
+7. Selected an operating threshold using grouped out-of-fold predictions.
+8. Validated model behavior across patient-history groups.
+9. Added patient-specific SHAP explanations.
+10. Built a scored patient registry and Streamlit interface.
+11. Tested additional clinical variables.
+12. Tested the architecture on a larger independently generated synthetic population.
+13. Retained unsuccessful or superseded approaches as documented experiments rather than production components.
 
-\- \*\*Pandas\*\*
+## Disclaimer
 
-\- \*\*XGBoost\*\*
-
-\- \*\*scikit-learn\*\*
-
-\- \*\*SHAP\*\*
-
-\- \*\*Streamlit\*\*
-
-\- \*\*Synthea\*\*
-
-\- \*\*Joblib\*\*
-
-
-
-\---
-
-
-
-\## Data
-
-
-
-The project uses synthetic electronic health record data generated by \*\*Synthea\*\*.
-
-
-
-Synthetic data makes it possible to develop and demonstrate the complete machine learning pipeline without using real patient records or protected health information.
-
-
-
-The synthetic nature of the data is also an important limitation. Relationships learned from Synthea should not be assumed to represent relationships in real-world clinical populations.
-
-
-
-\---
-
-
-
-\## Limitations
-
-
-
-Admitra is an experimental machine learning project rather than a validated clinical prediction system.
-
-
-
-Important limitations include:
-
-
-
-\- all patient records are synthetic
-
-\- performance has not been validated on real-world hospital data
-
-\- generated populations can exhibit artificial relationships between variables
-
-\- model performance changed on an independently generated Synthea cohort
-
-\- feature importance and SHAP values describe model behavior, not clinical causation
-
-\- the selected operating threshold has not been evaluated for real-world clinical costs or workflows
-
-\- predictions should not be interpreted as medical advice
-
-
-
-Real clinical deployment would require external validation, fairness analysis, prospective evaluation, clinical review, governance, monitoring, and appropriate regulatory and privacy controls.
-
-
-
-\---
-
-
-
-\## Development Philosophy
-
-
-
-The final Admitra model was selected based on held-out performance and validation rather than feature count.
-
-
-
-Development included:
-
-
-
-1\. building encounter-level readmission labels
-
-2\. incorporating clinical and observation data
-
-3\. engineering leakage-safe longitudinal patient-history features
-
-4\. separating patients between training and testing
-
-5\. addressing class imbalance
-
-6\. calibrating predicted probabilities
-
-7\. selecting an operating threshold using out-of-fold predictions
-
-8\. validating behavior across patient-history groups
-
-9\. adding patient-level SHAP explanations
-
-10\. testing additional clinical variables and a larger independently generated population
-
-
-
-Features and model variants that did not provide meaningful improvement were retained as experiments rather than incorporated into the production system.
-
-
-
-\---
-
-
-
-\## License and Use
-
-
-
-This project is intended for educational, research, and portfolio purposes.
-
-
-
-\*\*Not for clinical use.\*\*
-
+**For educational, research, and portfolio purposes only. Not for clinical use.**
