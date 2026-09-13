@@ -3,8 +3,8 @@ import pandas as pd
 import streamlit as st
 
 from src.predict_readmission import (
-    predict_readmission,
     explain_readmission,
+    predict_readmission,
 )
 
 
@@ -21,30 +21,63 @@ st.set_page_config(
 
 
 # ============================================================
-# CUSTOM CSS
+# DESIGN SYSTEM
+# Uses Streamlit's native System / Light / Dark setting.
 # ============================================================
 
-st.markdown(
+st.html(
     """
 <style>
 
 :root {
-    --bg: #08111f;
-    --sidebar: #0b1525;
-    --panel: #101b2e;
-    --border: rgba(148, 163, 184, 0.15);
+    --admitra-cyan: #38d9d0;
+    --admitra-blue: #5ea8ff;
+    --admitra-violet: #9b8cff;
+    --admitra-pink: #ec7fb5;
 
-    --text: #f8fafc;
-    --muted: #94a3b8;
-    --muted2: #64748b;
+    --admitra-green: #58d68d;
+    --admitra-yellow: #f3c95f;
+    --admitra-red: #ff7485;
 
-    --blue: #60a5fa;
-    --cyan: #22d3ee;
-    --purple: #a78bfa;
-    --pink: #f472b6;
-    --green: #4ade80;
-    --yellow: #facc15;
-    --red: #fb7185;
+    --admitra-bg: var(--background-color);
+    --admitra-panel: var(--secondary-background-color);
+    --admitra-text: var(--text-color);
+    --admitra-primary: var(--primary-color);
+
+    --admitra-border:
+        color-mix(
+            in srgb,
+            var(--text-color) 14%,
+            transparent
+        );
+
+    --admitra-border-soft:
+        color-mix(
+            in srgb,
+            var(--text-color) 8%,
+            transparent
+        );
+
+    --admitra-muted:
+        color-mix(
+            in srgb,
+            var(--text-color) 58%,
+            transparent
+        );
+
+    --admitra-muted-2:
+        color-mix(
+            in srgb,
+            var(--text-color) 40%,
+            transparent
+        );
+
+    --admitra-panel-strong:
+        color-mix(
+            in srgb,
+            var(--secondary-background-color) 90%,
+            var(--background-color)
+        );
 }
 
 
@@ -55,28 +88,63 @@ st.markdown(
 .stApp {
     background:
         radial-gradient(
-            circle at 65% -10%,
-            rgba(79, 70, 229, 0.15),
+            circle at 78% -5%,
+            color-mix(
+                in srgb,
+                var(--admitra-blue) 14%,
+                transparent
+            ),
+            transparent 30%
+        ),
+        radial-gradient(
+            circle at 15% 18%,
+            color-mix(
+                in srgb,
+                var(--admitra-cyan) 9%,
+                transparent
+            ),
+            transparent 24%
+        ),
+        radial-gradient(
+            circle at 90% 58%,
+            color-mix(
+                in srgb,
+                var(--admitra-violet) 8%,
+                transparent
+            ),
             transparent 28%
         ),
         radial-gradient(
-            circle at 10% 20%,
-            rgba(14, 165, 233, 0.08),
-            transparent 22%
+            circle at 10% 88%,
+            color-mix(
+                in srgb,
+                var(--admitra-pink) 5%,
+                transparent
+            ),
+            transparent 23%
         ),
-        #08111f;
+        var(--admitra-bg);
 
-    color: var(--text);
+    color: var(--admitra-text);
 }
 
+
 .block-container {
-    max-width: 1480px;
-    padding-top: 1.6rem;
+    max-width: 1500px;
+    padding-top: 1.15rem;
     padding-bottom: 3rem;
 }
 
+
+/* Keep native toolbar/menu so System / Light / Dark remains available */
+
 header[data-testid="stHeader"] {
-    background: transparent;
+    background: transparent !important;
+    border-bottom: none !important;
+}
+
+[data-testid="stToolbar"] {
+    background: transparent !important;
 }
 
 
@@ -90,67 +158,94 @@ section[data-testid="stSidebar"] {
     background:
         linear-gradient(
             180deg,
-            #0c1728 0%,
-            #0a1322 100%
+            color-mix(
+                in srgb,
+                var(--secondary-background-color) 93%,
+                var(--admitra-blue)
+            ),
+            var(--secondary-background-color)
         );
 
-    border-right: 1px solid rgba(96, 165, 250, 0.12);
+    border-right: 1px solid var(--admitra-border);
 }
 
+
 section[data-testid="stSidebar"] > div {
-    padding-top: 1.4rem;
+    padding-top: 1.35rem;
     padding-left: 1rem;
     padding-right: 1rem;
 }
 
-.sidebar-logo {
-    font-size: 1.55rem;
-    font-weight: 850;
-    letter-spacing: 0.15em;
 
-    background:
-        linear-gradient(
-            90deg,
-            #ffffff,
-            #93c5fd,
-            #c4b5fd
-        );
+.sidebar-brand {
+    padding: 0.15rem 0 1.05rem 0;
+    border-bottom: 1px solid var(--admitra-border);
+    margin-bottom: 0.95rem;
+}
+
+
+.sidebar-logo {
+    font-size: 1.52rem;
+    font-weight: 900;
+    letter-spacing: 0.18em;
+    color: var(--admitra-text) !important;
+    -webkit-text-fill-color: var(--admitra-text) !important;
+}
+
+background:
+    linear-gradient(
+        90deg,
+        var(--admitra-text),
+        var(--admitra-blue),
+        var(--admitra-cyan)
+    );
 
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-
-    margin-bottom: 0.15rem;
 }
+
 
 .sidebar-subtitle {
-    color: #64748b;
-    font-size: 0.74rem;
-    margin-bottom: 1.5rem;
+    color: var(--admitra-muted);
+    font-size: 0.68rem;
+    margin-top: 0.24rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
 }
+
 
 .sidebar-label {
-    color: #64748b;
-    font-size: 0.64rem;
-    font-weight: 750;
-    letter-spacing: 0.13em;
+    color: var(--admitra-muted-2);
+    font-size: 0.61rem;
+    font-weight: 780;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
-    margin-top: 0.4rem;
-    margin-bottom: 0.6rem;
+    margin: 0.75rem 0 0.45rem 0.05rem;
 }
+
 
 section[data-testid="stSidebar"] div[role="radiogroup"] {
-    gap: 0.35rem;
+    gap: 0.22rem;
 }
+
 
 section[data-testid="stSidebar"] div[role="radiogroup"] label {
-    padding: 0.68rem 0.75rem;
-    border-radius: 10px;
+    padding: 0.68rem 0.74rem;
+    border-radius: 9px;
     transition: 0.15s ease;
+    color: var(--admitra-text) !important;
 }
 
+
 section[data-testid="stSidebar"] div[role="radiogroup"] label:hover {
-    background: rgba(96, 165, 250, 0.07);
+    background:
+        color-mix(
+            in srgb,
+            var(--admitra-cyan) 8%,
+            transparent
+        );
 }
+
 
 section[data-testid="stSidebar"]
 div[role="radiogroup"]
@@ -158,243 +253,650 @@ label:has(input:checked) {
     background:
         linear-gradient(
             90deg,
-            rgba(59, 130, 246, 0.20),
-            rgba(139, 92, 246, 0.10)
+            color-mix(
+                in srgb,
+                var(--admitra-blue) 21%,
+                transparent
+            ),
+            color-mix(
+                in srgb,
+                var(--admitra-violet) 13%,
+                transparent
+            )
         );
 
-    border: 1px solid rgba(96, 165, 250, 0.22);
+    border:
+        1px solid
+        color-mix(
+            in srgb,
+            var(--admitra-blue) 30%,
+            transparent
+        );
+
+    box-shadow:
+        inset 3px 0 0
+        var(--admitra-cyan);
 }
+
+
+/* ==========================================================
+   MODEL CARD
+========================================================== */
 
 .model-card {
     background:
         linear-gradient(
             145deg,
-            rgba(30, 41, 59, 0.85),
-            rgba(15, 23, 42, 0.9)
+            color-mix(
+                in srgb,
+                var(--admitra-blue) 9%,
+                var(--admitra-panel)
+            ),
+            color-mix(
+                in srgb,
+                var(--admitra-violet) 5%,
+                var(--admitra-panel)
+            )
         );
 
-    border: 1px solid rgba(96, 165, 250, 0.13);
+    border: 1px solid var(--admitra-border);
     border-radius: 12px;
-
-    padding: 0.9rem;
-    margin-top: 0.25rem;
+    padding: 0.92rem;
 }
+
 
 .model-title {
-    color: #e2e8f0;
-    font-size: 0.82rem;
-    font-weight: 700;
+    color: var(--admitra-text);
+    font-size: 0.8rem;
+    font-weight: 760;
 }
 
+
 .model-description {
-    color: #64748b;
-    font-size: 0.69rem;
-    margin-top: 0.35rem;
+    color: var(--admitra-muted);
+    font-size: 0.68rem;
+    margin-top: 0.3rem;
+    line-height: 1.45;
 }
+
 
 .active-pill {
     display: inline-block;
     margin-top: 0.65rem;
 
-    color: #86efac;
-    background: rgba(34, 197, 94, 0.08);
-    border: 1px solid rgba(34, 197, 94, 0.20);
+    color: var(--admitra-green);
 
-    padding: 0.25rem 0.5rem;
+    background:
+        color-mix(
+            in srgb,
+            var(--admitra-green) 10%,
+            transparent
+        );
+
+    border:
+        1px solid
+        color-mix(
+            in srgb,
+            var(--admitra-green) 23%,
+            transparent
+        );
+
+    padding: 0.24rem 0.5rem;
     border-radius: 999px;
-
-    font-size: 0.63rem;
-    font-weight: 750;
+    font-size: 0.61rem;
+    font-weight: 800;
 }
 
+
 .sidebar-bottom {
-    color: #475569;
-    font-size: 0.66rem;
-    line-height: 1.5;
-    margin-top: 1.4rem;
+    margin-top: 1.25rem;
+    color: var(--admitra-muted-2);
+    font-size: 0.64rem;
+    line-height: 1.55;
 }
 
 
 /* ==========================================================
-   HERO
+   PAGE HERO
 ========================================================== */
 
 .page-hero {
-    border-radius: 16px;
-    padding: 1.25rem 1.35rem;
-    margin-bottom: 1.4rem;
+    position: relative;
+    overflow: hidden;
 
-    border: 1px solid rgba(96, 165, 250, 0.13);
+    border-radius: 18px;
+    padding: 1.45rem 1.5rem;
+    margin-bottom: 1.25rem;
+
+    border: 1px solid var(--admitra-border);
 
     background:
         linear-gradient(
-            120deg,
-            rgba(37, 99, 235, 0.12),
-            rgba(124, 58, 237, 0.08),
-            rgba(15, 23, 42, 0.2)
+            125deg,
+            color-mix(
+                in srgb,
+                var(--admitra-blue) 18%,
+                var(--admitra-panel)
+            ),
+            color-mix(
+                in srgb,
+                var(--admitra-violet) 12%,
+                var(--admitra-panel)
+            ),
+            color-mix(
+                in srgb,
+                var(--admitra-cyan) 6%,
+                var(--admitra-panel)
+            )
+        );
+
+    box-shadow:
+        0 18px 42px
+        color-mix(
+            in srgb,
+            #000000 13%,
+            transparent
         );
 }
 
+
+.page-hero::after {
+    content: "";
+
+    position: absolute;
+    width: 360px;
+    height: 360px;
+
+    right: -150px;
+    top: -200px;
+
+    border-radius: 50%;
+
+    background:
+        radial-gradient(
+            circle,
+            color-mix(
+                in srgb,
+                var(--admitra-cyan) 24%,
+                transparent
+            ),
+            color-mix(
+                in srgb,
+                var(--admitra-blue) 10%,
+                transparent
+            ),
+            transparent 70%
+        );
+
+    pointer-events: none;
+}
+
+
+.page-hero::before {
+    content: "";
+
+    position: absolute;
+
+    width: 230px;
+    height: 230px;
+
+    left: 42%;
+    bottom: -190px;
+
+    border-radius: 50%;
+
+    background:
+        radial-gradient(
+            circle,
+            color-mix(
+                in srgb,
+                var(--admitra-pink) 12%,
+                transparent
+            ),
+            transparent 70%
+        );
+
+    pointer-events: none;
+}
+
+
 .page-kicker {
-    color: #7dd3fc;
-    font-size: 0.68rem;
-    font-weight: 750;
-    letter-spacing: 0.13em;
+    color: var(--admitra-cyan);
+    font-size: 0.66rem;
+    font-weight: 820;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
 }
 
+
 .page-title {
-    color: #f8fafc;
-    font-size: 1.85rem;
-    font-weight: 820;
+    color: var(--admitra-text);
+    font-size: 1.9rem;
+    font-weight: 850;
     margin-top: 0.25rem;
+    letter-spacing: -0.02em;
 }
 
+
 .page-description {
-    color: #94a3b8;
-    font-size: 0.87rem;
-    margin-top: 0.35rem;
+    color: var(--admitra-muted);
+    font-size: 0.86rem;
+    margin-top: 0.38rem;
 }
 
 
 /* ==========================================================
-   METRIC CARDS
+   METRIC GRID
 ========================================================== */
 
-.metric-card {
-    border-radius: 14px;
-    padding: 1rem 1.05rem;
-    min-height: 122px;
+.metric-grid {
+    display: grid;
 
-    border: 1px solid rgba(148, 163, 184, 0.12);
+    grid-template-columns:
+        repeat(
+            4,
+            minmax(
+                0,
+                1fr
+            )
+        );
+
+    gap: 0.85rem;
+    margin-bottom: 1.25rem;
+}
+
+
+.metric-card {
+    position: relative;
+    overflow: hidden;
+
+    border-radius: 14px;
+    min-height: 128px;
+    padding: 1rem 1.05rem;
+
+    border: 1px solid var(--admitra-border);
 
     box-shadow:
-        0 12px 26px rgba(0, 0, 0, 0.16);
+        0 12px 28px
+        color-mix(
+            in srgb,
+            #000000 9%,
+            transparent
+        );
 }
+
+
+.metric-card::before {
+    content: "";
+    position: absolute;
+
+    left: 0;
+    top: 0;
+
+    width: 4px;
+    height: 100%;
+
+    background:
+        var(
+            --metric-accent,
+            var(--admitra-cyan)
+        );
+}
+
 
 .metric-blue {
+    --metric-accent: var(--admitra-blue);
+
     background:
         linear-gradient(
             145deg,
-            rgba(37, 99, 235, 0.18),
-            rgba(15, 23, 42, 0.82)
+            color-mix(
+                in srgb,
+                var(--admitra-blue) 19%,
+                var(--admitra-panel)
+            ),
+            var(--admitra-panel)
         );
 }
 
-.metric-purple {
+
+.metric-violet {
+    --metric-accent: var(--admitra-violet);
+
     background:
         linear-gradient(
             145deg,
-            rgba(124, 58, 237, 0.18),
-            rgba(15, 23, 42, 0.82)
+            color-mix(
+                in srgb,
+                var(--admitra-violet) 18%,
+                var(--admitra-panel)
+            ),
+            var(--admitra-panel)
         );
 }
+
 
 .metric-cyan {
+    --metric-accent: var(--admitra-cyan);
+
     background:
         linear-gradient(
             145deg,
-            rgba(8, 145, 178, 0.18),
-            rgba(15, 23, 42, 0.82)
+            color-mix(
+                in srgb,
+                var(--admitra-cyan) 16%,
+                var(--admitra-panel)
+            ),
+            var(--admitra-panel)
         );
 }
+
 
 .metric-pink {
+    --metric-accent: var(--admitra-pink);
+
     background:
         linear-gradient(
             145deg,
-            rgba(219, 39, 119, 0.14),
-            rgba(15, 23, 42, 0.82)
+            color-mix(
+                in srgb,
+                var(--admitra-pink) 15%,
+                var(--admitra-panel)
+            ),
+            var(--admitra-panel)
         );
 }
 
+
 .metric-label {
-    color: #94a3b8;
-    font-size: 0.68rem;
+    color: var(--admitra-muted);
+    font-size: 0.65rem;
+    font-weight: 740;
     letter-spacing: 0.08em;
     text-transform: uppercase;
 }
 
+
 .metric-value {
-    color: #f8fafc;
-    font-size: 1.75rem;
-    font-weight: 820;
-    margin-top: 0.35rem;
+    color: var(--admitra-text);
+    font-size: 1.72rem;
+    font-weight: 850;
+    margin-top: 0.4rem;
 }
 
+
 .metric-note {
-    color: #64748b;
-    font-size: 0.74rem;
-    margin-top: 0.25rem;
+    color: var(--admitra-muted-2);
+    font-size: 0.71rem;
+    margin-top: 0.28rem;
 }
 
 
 /* ==========================================================
-   SECTIONS
+   SECTION HEADER
 ========================================================== */
 
-.section-title {
-    color: #f8fafc;
-    font-size: 1.02rem;
-    font-weight: 720;
-    margin-top: 0.5rem;
-}
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: end;
+    gap: 1rem;
 
-.section-description {
-    color: #64748b;
-    font-size: 0.78rem;
-    margin-top: 0.15rem;
+    margin-top: 0.65rem;
     margin-bottom: 0.65rem;
 }
 
 
+.section-title {
+    color: var(--admitra-text);
+    font-size: 1.03rem;
+    font-weight: 790;
+}
+
+
+.section-description {
+    color: var(--admitra-muted);
+    font-size: 0.75rem;
+    margin-top: 0.16rem;
+}
+
+
+.section-tag {
+    color: var(--admitra-muted-2);
+    font-size: 0.62rem;
+    font-family: Consolas, monospace;
+    letter-spacing: 0.04em;
+}
+
+
 /* ==========================================================
-   PANEL
+   PANELS
 ========================================================== */
 
 .panel-card {
+    border: 1px solid var(--admitra-border);
+    border-radius: 14px;
+    padding: 1rem;
+
     background:
         linear-gradient(
             145deg,
-            rgba(15, 23, 42, 0.95),
-            rgba(17, 27, 46, 0.90)
+            color-mix(
+                in srgb,
+                var(--admitra-blue) 6%,
+                var(--admitra-panel-strong)
+            ),
+            var(--admitra-panel)
         );
 
-    border: 1px solid rgba(148, 163, 184, 0.12);
-    border-radius: 14px;
-
-    padding: 1rem 1.05rem;
+    box-shadow:
+        0 12px 26px
+        color-mix(
+            in srgb,
+            #000000 7%,
+            transparent
+        );
 }
+
 
 .review-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
 
-    padding: 0.7rem 0;
+    padding: 0.72rem 0;
 
     border-bottom:
-        1px solid rgba(148, 163, 184, 0.08);
+        1px solid var(--admitra-border-soft);
 }
+
 
 .review-row:last-child {
     border-bottom: none;
 }
 
+
 .review-label {
-    color: #cbd5e1;
-    font-size: 0.8rem;
+    color: var(--admitra-text);
+    font-size: 0.79rem;
 }
 
-.review-value {
-    color: #f8fafc;
-    font-size: 1rem;
-    font-weight: 750;
-}
 
 .review-sub {
-    color: #64748b;
-    font-size: 0.7rem;
+    color: var(--admitra-muted);
+    font-size: 0.68rem;
+    margin-top: 0.14rem;
+}
+
+
+.review-value {
+    color: var(--admitra-text);
+    font-size: 1rem;
+    font-weight: 780;
+}
+
+
+/* ==========================================================
+   ADMITRA RISK SIGNAL
+========================================================== */
+
+.risk-panel {
+    border: 1px solid var(--admitra-border);
+    border-radius: 14px;
+    padding: 1rem 1.05rem;
+
+    background:
+        linear-gradient(
+            145deg,
+            color-mix(
+                in srgb,
+                var(--admitra-cyan) 9%,
+                var(--admitra-panel)
+            ),
+            color-mix(
+                in srgb,
+                var(--admitra-blue) 5%,
+                var(--admitra-panel)
+            )
+        );
+}
+
+
+.risk-headline {
+    display: flex;
+    justify-content: space-between;
+    align-items: end;
+    gap: 1rem;
+}
+
+
+.risk-label {
+    color: var(--admitra-muted);
+    font-size: 0.64rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+
+.risk-number {
+    color: var(--admitra-text);
+    font-size: 2.7rem;
+    font-weight: 880;
+    line-height: 1;
+    margin-top: 0.28rem;
+    letter-spacing: -0.04em;
+}
+
+
+.risk-status {
+    font-size: 0.64rem;
+    font-weight: 820;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+
+    padding: 0.33rem 0.55rem;
+    border-radius: 999px;
+
+    border: 1px solid var(--admitra-border);
+    background: var(--admitra-panel-strong);
+}
+
+
+.risk-status.low {
+    color: var(--admitra-green);
+}
+
+
+.risk-status.moderate {
+    color: var(--admitra-yellow);
+}
+
+
+.risk-status.high {
+    color: var(--admitra-red);
+}
+
+
+.risk-track {
+    position: relative;
+
+    height: 10px;
+    margin-top: 0.92rem;
+    border-radius: 999px;
+
+    background:
+        linear-gradient(
+            90deg,
+            color-mix(
+                in srgb,
+                var(--admitra-green) 78%,
+                transparent
+            )
+            0 35%,
+
+            color-mix(
+                in srgb,
+                var(--admitra-yellow) 80%,
+                transparent
+            )
+            35% 65%,
+
+            color-mix(
+                in srgb,
+                var(--admitra-red) 80%,
+                transparent
+            )
+            65% 100%
+        );
+}
+
+
+.risk-marker {
+    position: absolute;
+
+    top: -5px;
+
+    width: 3px;
+    height: 20px;
+
+    border-radius: 999px;
+
+    background: var(--admitra-text);
+
+    box-shadow:
+        0 0 0 3px
+        color-mix(
+            in srgb,
+            var(--admitra-text) 12%,
+            transparent
+        );
+}
+
+
+.threshold-marker {
+    position: absolute;
+
+    top: -3px;
+
+    width: 1px;
+    height: 16px;
+
+    background: var(--admitra-text);
+
+    opacity: 0.42;
+}
+
+
+.risk-scale {
+    display: flex;
+    justify-content: space-between;
+
+    margin-top: 0.3rem;
+
+    color: var(--admitra-muted-2);
+
+    font-size: 0.58rem;
+    font-family: Consolas, monospace;
 }
 
 
@@ -405,17 +907,22 @@ label:has(input:checked) {
 .driver-card {
     background:
         linear-gradient(
-            135deg,
-            rgba(15, 23, 42, 0.94),
-            rgba(20, 34, 56, 0.9)
+            145deg,
+            color-mix(
+                in srgb,
+                var(--admitra-violet) 5%,
+                var(--admitra-panel-strong)
+            ),
+            var(--admitra-panel)
         );
 
-    border: 1px solid rgba(148, 163, 184, 0.12);
+    border: 1px solid var(--admitra-border);
     border-radius: 12px;
 
-    padding: 0.9rem 1rem;
+    padding: 0.88rem 0.95rem;
     margin-bottom: 0.55rem;
 }
+
 
 .driver-top {
     display: flex;
@@ -424,37 +931,86 @@ label:has(input:checked) {
     gap: 1rem;
 }
 
+
 .driver-feature {
-    color: #f8fafc;
-    font-size: 0.85rem;
-    font-weight: 700;
+    color: var(--admitra-text);
+    font-size: 0.82rem;
+    font-weight: 740;
 }
+
 
 .driver-up {
-    color: #fb7185;
-    font-size: 0.69rem;
-    font-weight: 700;
+    color: var(--admitra-red);
+    font-size: 0.64rem;
+    font-weight: 800;
 }
+
 
 .driver-down {
-    color: #4ade80;
-    font-size: 0.69rem;
-    font-weight: 700;
+    color: var(--admitra-green);
+    font-size: 0.64rem;
+    font-weight: 800;
 }
+
 
 .driver-value {
-    color: #dbeafe;
-    font-size: 0.78rem;
+    color: var(--admitra-text);
+    font-size: 0.76rem;
     font-weight: 650;
-    margin-top: 0.38rem;
+    margin-top: 0.36rem;
 }
 
+
 .driver-reasoning {
-    color: #94a3b8;
-    font-size: 0.75rem;
-    line-height: 1.5;
-    margin-top: 0.32rem;
-    max-width: 960px;
+    color: var(--admitra-muted);
+    font-size: 0.72rem;
+    line-height: 1.48;
+    margin-top: 0.3rem;
+}
+
+
+/* ==========================================================
+   PATIENT BANNER
+========================================================== */
+
+.patient-banner {
+    border: 1px solid var(--admitra-border);
+    border-left: 4px solid var(--admitra-cyan);
+
+    border-radius: 12px;
+
+    background:
+        linear-gradient(
+            100deg,
+            color-mix(
+                in srgb,
+                var(--admitra-cyan) 10%,
+                var(--admitra-panel)
+            ),
+            color-mix(
+                in srgb,
+                var(--admitra-blue) 5%,
+                var(--admitra-panel)
+            )
+        );
+
+    padding: 0.95rem 1rem;
+    margin-bottom: 0.8rem;
+}
+
+
+.patient-id {
+    color: var(--admitra-text);
+    font-size: 1rem;
+    font-family: Consolas, monospace;
+    font-weight: 760;
+}
+
+
+.patient-meta {
+    color: var(--admitra-muted);
+    font-size: 0.69rem;
+    margin-top: 0.2rem;
 }
 
 
@@ -464,63 +1020,154 @@ label:has(input:checked) {
 
 div[data-baseweb="input"] > div,
 div[data-baseweb="select"] > div {
-    background-color: #121d30 !important;
-    border-color: rgba(96, 165, 250, 0.14) !important;
-    border-radius: 9px !important;
+    background-color:
+        var(--admitra-panel) !important;
+
+    border-color:
+        var(--admitra-border) !important;
+
+    border-radius:
+        9px !important;
 }
+
 
 label {
-    color: #cbd5e1 !important;
+    color:
+        var(--admitra-text) !important;
 }
+
 
 .stButton > button {
-    height: 3rem;
-    border-radius: 10px;
+    min-height: 2.85rem;
 
-    border: 1px solid rgba(147, 197, 253, 0.22);
+    border-radius:
+        9px !important;
+
+    border:
+        1px solid
+        color-mix(
+            in srgb,
+            var(--admitra-blue) 28%,
+            transparent
+        );
 
     background:
         linear-gradient(
             90deg,
-            #2563eb,
-            #7c3aed
+            color-mix(
+                in srgb,
+                var(--admitra-blue) 22%,
+                var(--admitra-panel)
+            ),
+            color-mix(
+                in srgb,
+                var(--admitra-violet) 15%,
+                var(--admitra-panel)
+            )
         );
 
-    color: white;
-    font-weight: 750;
+    color:
+        var(--admitra-text);
+
+    font-weight:
+        760;
 }
+
 
 .stButton > button:hover {
-    background:
-        linear-gradient(
-            90deg,
-            #1d4ed8,
-            #6d28d9
-        );
+    border-color:
+        var(--admitra-blue);
 
-    color: white;
+    box-shadow:
+        0 0 0 1px
+        color-mix(
+            in srgb,
+            var(--admitra-blue) 20%,
+            transparent
+        );
 }
+
 
 div[data-testid="stDataFrame"] {
-    border: 1px solid rgba(148, 163, 184, 0.12);
-    border-radius: 11px;
-    overflow: hidden;
+    border:
+        1px solid var(--admitra-border);
+
+    border-radius:
+        11px;
+
+    overflow:
+        hidden;
 }
+
 
 .disclaimer {
     margin-top: 2rem;
     padding-top: 1rem;
 
     border-top:
-        1px solid rgba(148, 163, 184, 0.11);
+        1px solid var(--admitra-border);
 
-    color: #475569;
-    font-size: 0.69rem;
+    color:
+        var(--admitra-muted-2);
+
+    font-size:
+        0.66rem;
+}
+
+
+/* ==========================================================
+   MOBILE
+========================================================== */
+
+@media (max-width: 900px) {
+
+    .block-container {
+        padding-left: 0.8rem;
+        padding-right: 0.8rem;
+        padding-top: 0.8rem;
+    }
+
+
+    .metric-grid {
+        grid-template-columns:
+            repeat(
+                2,
+                minmax(
+                    0,
+                    1fr
+                )
+            );
+    }
+
+
+    .risk-headline {
+        display: block;
+    }
+
+
+    .risk-status {
+        display: inline-block;
+        margin-top: 0.7rem;
+    }
+
+
+    section[data-testid="stSidebar"] {
+        width:
+            min(
+                88vw,
+                300px
+            ) !important;
+
+        min-width:
+            min(
+                88vw,
+                300px
+            ) !important;
+    }
 }
 
 </style>
-""",
-    unsafe_allow_html=True,
+"""
 )
 
 
@@ -540,24 +1187,8 @@ registry = load_registry()
 
 
 # ============================================================
-# HELPERS
+# BASIC HELPERS
 # ============================================================
-
-def short_patient_id(patient_id):
-
-    return (
-        "P-"
-        + str(patient_id)[-6:].upper()
-    )
-
-
-def short_encounter_id(encounter_id):
-
-    return (
-        "E-"
-        + str(encounter_id)[-6:].upper()
-    )
-
 
 def safe_number(
     value,
@@ -570,74 +1201,67 @@ def safe_number(
     return value
 
 
-def section_header(
-    title,
-    description,
+def short_patient_id(
+    patient_id,
 ):
 
-    st.markdown(
-        f'<div class="section-title">{title}</div>',
-        unsafe_allow_html=True,
-    )
-
-    st.markdown(
-        f'<div class="section-description">{description}</div>',
-        unsafe_allow_html=True,
+    return (
+        "P-"
+        + str(patient_id)[-6:].upper()
     )
 
 
-def page_header(
-    kicker,
-    title,
-    description,
+def short_encounter_id(
+    encounter_id,
 ):
 
-    st.markdown(
-        (
-            '<div class="page-hero">'
-            f'<div class="page-kicker">{kicker}</div>'
-            f'<div class="page-title">{title}</div>'
-            f'<div class="page-description">{description}</div>'
-            '</div>'
-        ),
-        unsafe_allow_html=True,
+    return (
+        "E-"
+        + str(encounter_id)[-6:].upper()
     )
 
 
-def metric_card(
-    label,
-    value,
-    note,
-    style_class,
+def condition_summary(
+    row,
 ):
-
-    st.markdown(
-        (
-            f'<div class="metric-card {style_class}">'
-            f'<div class="metric-label">{label}</div>'
-            f'<div class="metric-value">{value}</div>'
-            f'<div class="metric-note">{note}</div>'
-            '</div>'
-        ),
-        unsafe_allow_html=True,
-    )
-
-
-def condition_summary(row):
 
     conditions = []
 
-    if row.get("diabetes", 0) == 1:
-        conditions.append("Diabetes")
 
-    if row.get("hypertension", 0) == 1:
-        conditions.append("Hypertension")
+    if row.get(
+        "diabetes",
+        0,
+    ) == 1:
 
-    if row.get("kidney_disease", 0) == 1:
-        conditions.append("Kidney Disease")
+        conditions.append(
+            "Diabetes"
+        )
+
+
+    if row.get(
+        "hypertension",
+        0,
+    ) == 1:
+
+        conditions.append(
+            "Hypertension"
+        )
+
+
+    if row.get(
+        "kidney_disease",
+        0,
+    ) == 1:
+
+        conditions.append(
+            "Kidney Disease"
+        )
+
 
     if not conditions:
+
         return "None flagged"
+
 
     return ", ".join(
         conditions
@@ -645,302 +1269,111 @@ def condition_summary(row):
 
 
 # ============================================================
-# DRIVER EXPLANATIONS
+# UI HELPERS
 # ============================================================
 
-def render_drivers(
-    drivers,
+def page_header(
+    kicker,
+    title,
+    description,
 ):
 
-    explanations = {
-        "Admissions in last 30 days":
-            "Very recent hospitalization history can indicate an active pattern of repeated inpatient care.",
+    st.html(
+        (
+            '<div class="page-hero">'
 
-        "Admissions in last 90 days":
-            "Recent inpatient utilization is one of the strongest signals associated with 30-day readmission in this model.",
+            f'<div class="page-kicker">'
+            f'{kicker}'
+            f'</div>'
 
-        "Admissions in last 365 days":
-            "Repeated hospital admissions over the previous year indicate a sustained pattern of inpatient utilization.",
+            f'<div class="page-title">'
+            f'{title}'
+            f'</div>'
 
-        "Prior readmissions in last 365 days":
-            "Previous confirmed readmissions provide direct evidence of a recent pattern of returning to inpatient care.",
+            f'<div class="page-description">'
+            f'{description}'
+            f'</div>'
 
-        "Days since last inpatient admission":
-            "A more recent prior hospitalization can increase modeled readmission risk because the patient returned to inpatient care within a shorter interval.",
+            '</div>'
+        )
+    )
 
-        "Prior inpatient history":
-            "The model considers whether the patient has any documented inpatient history before the current encounter.",
 
-        "Previous inpatient admissions":
-            "The patient's cumulative history of inpatient admissions contributes additional context about long-term healthcare utilization.",
+def section_header(
+    title,
+    description,
+    tag="",
+):
 
-        "Condition burden":
-            "The number of documented health conditions contributes to the model's estimate of overall clinical complexity.",
+    st.html(
+        (
+            '<div class="section-header">'
 
-        "Procedure count":
-            "The number of procedures contributes information about the complexity of the patient's recent course of care.",
+            '<div>'
 
-        "Medication count":
-            "The number of medications contributes information about treatment complexity.",
+            f'<div class="section-title">'
+            f'{title}'
+            f'</div>'
 
-        "Age":
-            "Age contributes to the prediction based on patterns learned across patients of different ages.",
+            f'<div class="section-description">'
+            f'{description}'
+            f'</div>'
 
-        "Length of stay":
-            "The duration of the current hospitalization contributes to the model's assessment of the encounter.",
+            '</div>'
 
-        "Diabetes":
-            "Diabetes status contributes to the patient's overall clinical profile.",
+            f'<div class="section-tag">'
+            f'{tag}'
+            f'</div>'
 
-        "Hypertension":
-            "Hypertension status contributes to the patient's overall clinical profile.",
+            '</div>'
+        )
+    )
 
-        "Kidney disease":
-            "Kidney disease status contributes to the patient's overall clinical profile.",
 
-        "BMI":
-            "BMI contributes to the prediction based on patterns observed across the synthetic training population.",
-    }
+def metric_grid(
+    items,
+):
 
+    html = ""
 
-    units = {
-        "Age":
-            "years",
 
-        "Length of stay":
-            "days",
+    for (
+        label,
+        value,
+        note,
+        style_class,
+    ) in items:
 
-        "Previous inpatient admissions":
-            "prior admissions",
+        html += (
+            f'<div class="metric-card {style_class}">'
 
-        "Admissions in last 30 days":
-            "admissions",
+            f'<div class="metric-label">'
+            f'{label}'
+            f'</div>'
 
-        "Admissions in last 90 days":
-            "admissions",
+            f'<div class="metric-value">'
+            f'{value}'
+            f'</div>'
 
-        "Admissions in last 365 days":
-            "admissions",
+            f'<div class="metric-note">'
+            f'{note}'
+            f'</div>'
 
-        "Days since last inpatient admission":
-            "days",
-
-        "Prior readmissions in last 365 days":
-            "prior readmissions",
-
-        "Condition burden":
-            "documented conditions",
-
-        "Medication count":
-            "medications",
-
-        "Procedure count":
-            "procedures",
-    }
-
-
-    binary_features = {
-        "Prior inpatient history",
-        "Diabetes",
-        "Hypertension",
-        "Kidney disease",
-    }
-
-
-    for driver in drivers:
-
-        feature = driver[
-            "feature"
-        ]
-
-        direction = driver[
-            "direction"
-        ]
-
-
-        if direction == "increases risk":
-
-            direction_class = (
-                "driver-up"
-            )
-
-            direction_label = (
-                "↑ PUSHED PREDICTION HIGHER"
-            )
-
-        elif direction == "decreases risk":
-
-            direction_class = (
-                "driver-down"
-            )
-
-            direction_label = (
-                "↓ PUSHED PREDICTION LOWER"
-            )
-
-        else:
-
-            direction_class = ""
-
-            direction_label = (
-                "NEUTRAL"
-            )
-
-
-        raw_value = driver[
-            "value"
-        ]
-
-
-        if feature in binary_features:
-
-            try:
-
-                display_value = (
-                    "Present"
-                    if float(
-                        raw_value
-                    ) == 1
-                    else "Not present"
-                )
-
-            except Exception:
-
-                display_value = str(
-                    raw_value
-                )
-
-        else:
-
-            try:
-
-                number = round(
-                    float(
-                        raw_value
-                    ),
-                    1,
-                )
-
-            except Exception:
-
-                number = (
-                    raw_value
-                )
-
-
-            unit = units.get(
-                feature,
-                "",
-            )
-
-
-            if unit:
-
-                display_value = (
-                    f"{number} {unit}"
-                )
-
-            else:
-
-                display_value = str(
-                    number
-                )
-
-
-        explanation = explanations.get(
-            feature,
-            "This factor influenced the prediction based on patterns learned by the model.",
+            '</div>'
         )
 
 
-        st.markdown(
-            (
-                '<div class="driver-card">'
-
-                '<div class="driver-top">'
-                f'<div class="driver-feature">{feature}</div>'
-                f'<div class="{direction_class}">{direction_label}</div>'
-                '</div>'
-
-                '<div class="driver-value">'
-                f'{display_value}'
-                '</div>'
-
-                '<div class="driver-reasoning">'
-                f'{explanation}'
-                '</div>'
-
-                '</div>'
-            ),
-            unsafe_allow_html=True,
+    st.html(
+        (
+            '<div class="metric-grid">'
+            f'{html}'
+            '</div>'
         )
+    )
 
 
 # ============================================================
-# FACTOR DEFINITIONS
-# ============================================================
-
-def factor_definitions():
-
-    with st.expander(
-        "What do these factors mean?"
-    ):
-
-        st.markdown(
-            """
-**Admissions in last 30 days**  
-The number of inpatient hospital admissions recorded during the 30 days before the current hospitalization.
-
-**Admissions in last 90 days**  
-The number of inpatient hospital admissions recorded during the 90 days before the current hospitalization.
-
-**Admissions in last 365 days**  
-The number of inpatient hospital admissions recorded during the year before the current hospitalization.
-
-**Prior readmissions in last 365 days**  
-The number of earlier hospitalizations during the previous year that were followed by another inpatient admission within 30 days.
-
-**Days since last inpatient admission**  
-The number of days between the patient's most recent prior inpatient admission and the current hospitalization.
-
-**Prior inpatient history**  
-Indicates whether the patient had any inpatient hospitalization before the current encounter.
-
-**Previous inpatient admissions**  
-The patient's cumulative number of inpatient admissions before the current hospitalization.
-
-**Condition burden**  
-The number of documented health conditions associated with the patient.
-
-**Procedure count**  
-The number of procedures associated with the patient's hospitalization and available treatment record.
-
-**Medication count**  
-The number of medications represented in the patient's available treatment record.
-
-**Length of stay**  
-The number of days the patient remained hospitalized during the current encounter.
-
-**Age**  
-The patient's age at the time of admission.
-
-**BMI**  
-Body mass index, a measure calculated from height and weight.
-
-**Diabetes**  
-Whether diabetes is documented in the patient's available clinical history.
-
-**Hypertension**  
-Whether hypertension is documented in the patient's available clinical history.
-
-**Kidney disease**  
-Whether kidney disease is documented in the patient's available clinical history.
-"""
-        )
-
-
-# ============================================================
-# PATIENT DATA HELPER
+# MODEL INPUT
 # ============================================================
 
 def row_to_model_input(
@@ -948,6 +1381,7 @@ def row_to_model_input(
 ):
 
     return {
+
         "age_at_admission":
             row[
                 "age_at_admission"
@@ -1031,6 +1465,421 @@ def row_to_model_input(
 
 
 # ============================================================
+# DRIVER CONFIGURATION
+# ============================================================
+
+DRIVER_EXPLANATIONS = {
+
+    "Admissions in last 30 days":
+        (
+            "Very recent hospitalization history can indicate "
+            "an active pattern of repeated inpatient care."
+        ),
+
+    "Admissions in last 90 days":
+        (
+            "Recent inpatient utilization is one of the "
+            "strongest signals associated with 30-day "
+            "readmission in this model."
+        ),
+
+    "Admissions in last 365 days":
+        (
+            "Repeated hospital admissions over the previous "
+            "year indicate sustained inpatient utilization."
+        ),
+
+    "Prior readmissions in last 365 days":
+        (
+            "Previous confirmed readmissions provide direct "
+            "evidence of a recent pattern of returning to "
+            "inpatient care."
+        ),
+
+    "Days since last inpatient admission":
+        (
+            "A more recent prior hospitalization can increase "
+            "modeled readmission risk because the patient "
+            "returned to inpatient care within a shorter interval."
+        ),
+
+    "Prior inpatient history":
+        (
+            "The model considers whether the patient has any "
+            "documented inpatient history before the current encounter."
+        ),
+
+    "Previous inpatient admissions":
+        (
+            "The patient's cumulative history of inpatient "
+            "admissions contributes additional context about "
+            "long-term healthcare utilization."
+        ),
+
+    "Condition burden":
+        (
+            "The number of documented health conditions "
+            "contributes to the model's estimate of overall "
+            "clinical complexity."
+        ),
+
+    "Procedure count":
+        (
+            "The number of procedures contributes information "
+            "about the complexity of the patient's recent course of care."
+        ),
+
+    "Medication count":
+        (
+            "The number of medications contributes information "
+            "about treatment complexity."
+        ),
+
+    "Age":
+        (
+            "Age contributes to the prediction based on patterns "
+            "learned across patients of different ages."
+        ),
+
+    "Length of stay":
+        (
+            "The duration of the current hospitalization contributes "
+            "to the model's assessment of the encounter."
+        ),
+
+    "Diabetes":
+        (
+            "Diabetes status contributes to the patient's "
+            "overall clinical profile."
+        ),
+
+    "Hypertension":
+        (
+            "Hypertension status contributes to the patient's "
+            "overall clinical profile."
+        ),
+
+    "Kidney disease":
+        (
+            "Kidney disease status contributes to the patient's "
+            "overall clinical profile."
+        ),
+
+    "BMI":
+        (
+            "BMI contributes to the prediction based on patterns "
+            "observed across the synthetic training population."
+        ),
+}
+
+
+DRIVER_UNITS = {
+
+    "Age":
+        "years",
+
+    "Length of stay":
+        "days",
+
+    "Previous inpatient admissions":
+        "prior admissions",
+
+    "Admissions in last 30 days":
+        "admissions",
+
+    "Admissions in last 90 days":
+        "admissions",
+
+    "Admissions in last 365 days":
+        "admissions",
+
+    "Days since last inpatient admission":
+        "days",
+
+    "Prior readmissions in last 365 days":
+        "prior readmissions",
+
+    "Condition burden":
+        "documented conditions",
+
+    "Medication count":
+        "medications",
+
+    "Procedure count":
+        "procedures",
+}
+
+
+BINARY_FEATURES = {
+    "Prior inpatient history",
+    "Diabetes",
+    "Hypertension",
+    "Kidney disease",
+}
+
+
+def render_drivers(
+    drivers,
+):
+
+    for driver in drivers:
+
+        feature = driver[
+            "feature"
+        ]
+
+        direction = driver[
+            "direction"
+        ]
+
+
+        if direction == "increases risk":
+
+            direction_class = (
+                "driver-up"
+            )
+
+            direction_label = (
+                "↑ PUSHED HIGHER"
+            )
+
+
+        elif direction == "decreases risk":
+
+            direction_class = (
+                "driver-down"
+            )
+
+            direction_label = (
+                "↓ PUSHED LOWER"
+            )
+
+
+        else:
+
+            direction_class = ""
+
+            direction_label = (
+                "NEUTRAL"
+            )
+
+
+        raw_value = driver[
+            "value"
+        ]
+
+
+        if feature in BINARY_FEATURES:
+
+            try:
+
+                display_value = (
+                    "Present"
+                    if float(
+                        raw_value
+                    )
+                    == 1
+                    else "Not present"
+                )
+
+            except Exception:
+
+                display_value = str(
+                    raw_value
+                )
+
+
+        else:
+
+            try:
+
+                number = round(
+                    float(
+                        raw_value
+                    ),
+                    1,
+                )
+
+            except Exception:
+
+                number = (
+                    raw_value
+                )
+
+
+            unit = DRIVER_UNITS.get(
+                feature,
+                "",
+            )
+
+
+            display_value = (
+                f"{number} {unit}"
+                .strip()
+            )
+
+
+        explanation = DRIVER_EXPLANATIONS.get(
+            feature,
+            (
+                "This factor influenced the prediction "
+                "based on patterns learned by the model."
+            ),
+        )
+
+
+        st.html(
+            (
+                '<div class="driver-card">'
+
+                '<div class="driver-top">'
+
+                f'<div class="driver-feature">'
+                f'{feature}'
+                f'</div>'
+
+                f'<div class="{direction_class}">'
+                f'{direction_label}'
+                f'</div>'
+
+                '</div>'
+
+                f'<div class="driver-value">'
+                f'{display_value}'
+                f'</div>'
+
+                f'<div class="driver-reasoning">'
+                f'{explanation}'
+                f'</div>'
+
+                '</div>'
+            )
+        )
+
+
+# ============================================================
+# RISK SIGNAL
+# ============================================================
+
+def risk_signal(
+    probability,
+    risk_level,
+    threshold_percent,
+    review_recommended,
+):
+
+    probability = float(
+        probability
+    )
+
+    threshold_percent = float(
+        threshold_percent
+    )
+
+
+    marker_left = max(
+        0.0,
+        min(
+            100.0,
+            probability,
+        ),
+    )
+
+
+    threshold_left = max(
+        0.0,
+        min(
+            100.0,
+            threshold_percent,
+        ),
+    )
+
+
+    status_class = (
+        str(
+            risk_level
+        )
+        .lower()
+    )
+
+
+    review_text = (
+        "REVIEW REQUIRED"
+        if review_recommended
+        else "NO REVIEW FLAG"
+    )
+
+
+    st.html(
+        f"""
+<div class="risk-panel">
+
+    <div class="risk-headline">
+
+        <div>
+
+            <div class="risk-label">
+                Calibrated 30-Day Readmission Risk
+            </div>
+
+            <div class="risk-number">
+                {probability:.1f}%
+            </div>
+
+        </div>
+
+        <div class="risk-status {status_class}">
+            {risk_level} · {review_text}
+        </div>
+
+    </div>
+
+    <div class="risk-track">
+
+        <div
+            class="risk-marker"
+            style="
+                left:
+                calc(
+                    {marker_left:.2f}%
+                    - 1px
+                )
+            "
+        ></div>
+
+        <div
+            class="threshold-marker"
+            style="
+                left:
+                {threshold_left:.2f}%
+            "
+        ></div>
+
+    </div>
+
+    <div class="risk-scale">
+
+        <span>
+            LOW
+        </span>
+
+        <span>
+            REVIEW THRESHOLD
+            {threshold_percent:.0f}%
+        </span>
+
+        <span>
+            HIGH
+        </span>
+
+    </div>
+
+</div>
+"""
+    )
+
+
+# ============================================================
 # PRESET EXAMPLES
 # ============================================================
 
@@ -1062,7 +1911,9 @@ def get_registry_example(
         .sort_values(
             "distance_from_target"
         )
-        .iloc[0]
+        .iloc[
+            0
+        ]
     )
 
 
@@ -1071,6 +1922,7 @@ def row_to_defaults(
 ):
 
     return {
+
         "age":
             int(
                 safe_number(
@@ -1233,12 +2085,14 @@ low_example = row_to_defaults(
     )
 )
 
+
 moderate_example = row_to_defaults(
     get_registry_example(
         "MODERATE",
         12.0,
     )
 )
+
 
 high_example = row_to_defaults(
     get_registry_example(
@@ -1252,55 +2106,6 @@ high_example = row_to_defaults(
 # SIDEBAR
 # ============================================================
 
-st.sidebar.markdown(
-    '<div class="sidebar-logo">ADMITRA</div>',
-    unsafe_allow_html=True,
-)
-
-st.sidebar.markdown(
-    '<div class="sidebar-subtitle">'
-    'Hospital Intelligence Platform'
-    '</div>',
-    unsafe_allow_html=True,
-)
-
-st.sidebar.markdown(
-    '<div class="sidebar-label">Workspace</div>',
-    unsafe_allow_html=True,
-)
-
-
-page = st.sidebar.radio(
-    "Workspace",
-    [
-        "Operations Overview",
-        "Patient Review",
-        "Risk Assessment",
-    ],
-    label_visibility="collapsed",
-)
-
-
-st.sidebar.markdown(
-    '<div class="sidebar-label">System</div>',
-    unsafe_allow_html=True,
-)
-
-
-st.sidebar.markdown(
-    (
-        '<div class="model-card">'
-        '<div class="model-title">Readmission Intelligence</div>'
-        '<div class="model-description">'
-        'History-aware calibrated XGBoost model'
-        '</div>'
-        '<div class="active-pill">● MODEL ACTIVE</div>'
-        '</div>'
-    ),
-    unsafe_allow_html=True,
-)
-
-
 review_count_sidebar = int(
     registry[
         "intervention_recommended"
@@ -1308,32 +2113,89 @@ review_count_sidebar = int(
 )
 
 
-st.sidebar.markdown(
+st.sidebar.html(
+    """
+<div class="sidebar-brand">
+
+    <div class="sidebar-logo">
+        ADMITRA
+    </div>
+
+    <div class="sidebar-subtitle">
+        Hospital Intelligence Platform
+    </div>
+
+</div>
+"""
+)
+
+
+st.sidebar.html(
+    '<div class="sidebar-label">Workspace</div>'
+)
+
+
+page = st.sidebar.radio(
+    "Workspace",
+    [
+        "Operations Console",
+        "Patient Workup",
+        "Risk Assessment",
+    ],
+    label_visibility="collapsed",
+)
+
+
+st.sidebar.html(
+    '<div class="sidebar-label">System</div>'
+)
+
+
+st.sidebar.html(
+    (
+        '<div class="model-card">'
+
+        '<div class="model-title">'
+        'Readmission Intelligence'
+        '</div>'
+
+        '<div class="model-description">'
+        'History-aware calibrated XGBoost model'
+        '</div>'
+
+        '<div class="active-pill">'
+        '● MODEL ACTIVE'
+        '</div>'
+
+        '</div>'
+    )
+)
+
+
+st.sidebar.html(
     (
         '<div class="sidebar-bottom">'
+
         f'{review_count_sidebar:,} encounters in review queue'
+
         '<br><br>'
+
         'Synthetic Synthea environment'
+
         '<br>'
+
         'Portfolio demonstration'
+
         '</div>'
-    ),
-    unsafe_allow_html=True,
+    )
 )
 
 
 # ============================================================
-# OPERATIONS OVERVIEW
+# OPERATIONS CONSOLE
 # ============================================================
 
-if page == "Operations Overview":
-
-    page_header(
-        "OPERATIONS OVERVIEW",
-        "Readmission Operations",
-        "Monitor population risk, review workload, and priority patients.",
-    )
-
+if page == "Operations Console":
 
     total_hospitalizations = len(
         registry
@@ -1385,12 +2247,6 @@ if page == "Operations Overview":
     )
 
 
-    not_flagged_count = (
-        total_hospitalizations
-        - intervention_count
-    )
-
-
     average_risk = float(
         registry[
             "readmission_probability_percent"
@@ -1398,58 +2254,63 @@ if page == "Operations Overview":
     )
 
 
-    m1, m2, m3, m4 = st.columns(
-        4,
-        gap="medium",
+    not_flagged_count = (
+        total_hospitalizations
+        - intervention_count
     )
 
 
-    with m1:
-
-        metric_card(
-            "Hospitalizations",
-            f"{total_hospitalizations:,}",
-            "Scored inpatient encounters",
-            "metric-blue",
-        )
-
-
-    with m2:
-
-        metric_card(
-            "Observed Readmission",
-            f"{readmission_rate:.1f}%",
-            f"{actual_readmissions:,} observed events",
-            "metric-purple",
-        )
+    page_header(
+        "OPERATIONS CONSOLE",
+        "Readmission Operations",
+        (
+            "Monitor population risk, review workload, "
+            "and priority patients across the synthetic "
+            "hospital population."
+        ),
+    )
 
 
-    with m3:
+    metric_grid(
+        [
+            (
+                "Hospitalizations",
+                f"{total_hospitalizations:,}",
+                "Scored inpatient encounters",
+                "metric-blue",
+            ),
 
-        metric_card(
-            "Review Queue",
-            f"{intervention_count:,}",
-            f"{intervention_rate:.1f}% of encounters",
-            "metric-cyan",
-        )
+            (
+                "Observed Readmission",
+                f"{readmission_rate:.1f}%",
+                f"{actual_readmissions:,} observed events",
+                "metric-violet",
+            ),
 
+            (
+                "Review Queue",
+                f"{intervention_count:,}",
+                f"{intervention_rate:.1f}% of encounters",
+                "metric-cyan",
+            ),
 
-    with m4:
-
-        metric_card(
-            "High Risk",
-            f"{high_risk_count:,}",
-            f"{high_risk_rate:.1f}% of encounters",
-            "metric-pink",
-        )
-
-
-    st.write("")
+            (
+                "High Risk",
+                f"{high_risk_count:,}",
+                f"{high_risk_rate:.1f}% of encounters",
+                "metric-pink",
+            ),
+        ]
+    )
 
 
     section_header(
         "Population Overview",
-        "Risk distribution and review demand across scored encounters.",
+        (
+            "Risk distribution and review demand "
+            "across scored encounters."
+        ),
+        "POPULATION",
     )
 
 
@@ -1476,8 +2337,12 @@ if page == "Operations Overview":
                     "HIGH",
                 ]
             )
-            .fillna(0)
-            .astype(int)
+            .fillna(
+                0
+            )
+            .astype(
+                int
+            )
         )
 
 
@@ -1510,39 +2375,30 @@ if page == "Operations Overview":
                         "HIGH",
                     ],
                     title=None,
-                    axis=alt.Axis(
-                        labelColor="#cbd5e1",
-                        labelFontSize=13,
-                        ticks=False,
-                        domain=False,
-                    ),
                 ),
 
                 x=alt.X(
                     "Encounters:Q",
                     title=None,
-                    axis=alt.Axis(
-                        labelColor="#64748b",
-                        gridColor="#1e293b",
-                        gridOpacity=0.8,
-                        domain=False,
-                    ),
                 ),
 
                 color=alt.Color(
                     "Risk Tier:N",
+
                     scale=alt.Scale(
                         domain=[
                             "LOW",
                             "MODERATE",
                             "HIGH",
                         ],
+
                         range=[
-                            "#4ade80",
-                            "#facc15",
-                            "#fb7185",
+                            "#58d68d",
+                            "#f3c95f",
+                            "#ff7485",
                         ],
                     ),
+
                     legend=None,
                 ),
 
@@ -1566,57 +2422,81 @@ if page == "Operations Overview":
 
         st.altair_chart(
             risk_chart,
-            use_container_width=True,
+            width="stretch",
         )
 
 
     with review_col:
 
-        review_rate = (
-            intervention_count
-            / total_hospitalizations
-            * 100
-        )
-
-
-        not_flagged_rate = (
-            not_flagged_count
-            / total_hospitalizations
-            * 100
-        )
-
-
-        st.markdown(
+        st.html(
             (
                 '<div class="panel-card">'
 
                 '<div class="review-row">'
+
                 '<div>'
-                '<div class="review-label">Review recommended</div>'
-                f'<div class="review-sub">{review_rate:.1f}% of encounters</div>'
+
+                '<div class="review-label">'
+                'Review recommended'
                 '</div>'
-                f'<div class="review-value">{intervention_count:,}</div>'
+
+                f'<div class="review-sub">'
+                f'{intervention_rate:.1f}% of encounters'
+                f'</div>'
+
                 '</div>'
+
+                f'<div class="review-value">'
+                f'{intervention_count:,}'
+                f'</div>'
+
+                '</div>'
+
 
                 '<div class="review-row">'
+
                 '<div>'
-                '<div class="review-label">Not flagged</div>'
-                f'<div class="review-sub">{not_flagged_rate:.1f}% of encounters</div>'
+
+                '<div class="review-label">'
+                'Not flagged'
                 '</div>'
-                f'<div class="review-value">{not_flagged_count:,}</div>'
+
+                f'<div class="review-sub">'
+                f'{100 - intervention_rate:.1f}% of encounters'
+                f'</div>'
+
                 '</div>'
+
+                f'<div class="review-value">'
+                f'{not_flagged_count:,}'
+                f'</div>'
+
+                '</div>'
+
 
                 '<div class="review-row">'
+
                 '<div>'
-                '<div class="review-label">Average modeled risk</div>'
-                '<div class="review-sub">Across scored encounters</div>'
+
+                '<div class="review-label">'
+                'Average modeled risk'
                 '</div>'
-                f'<div class="review-value">{average_risk:.1f}%</div>'
+
+                '<div class="review-sub">'
+                'Across scored encounters'
                 '</div>'
 
                 '</div>'
-            ),
-            unsafe_allow_html=True,
+
+                f'<div class="review-value">'
+                f'{average_risk:.1f}%'
+                f'</div>'
+
+                '</div>'
+
+
+                '</div>'
+            )
         )
 
 
@@ -1624,16 +2504,20 @@ if page == "Operations Overview":
 
 
     section_header(
-        "Priority Worklist",
-        "Filter, review, and search patients by modeled readmission risk.",
+        "Priority Patient Queue",
+        (
+            "Filter and review the highest-risk "
+            "encounter for each patient."
+        ),
+        "TOP 20",
     )
 
 
     filter_col1, filter_col2, filter_col3 = st.columns(
         [
-            0.34,
-            0.33,
-            0.33,
+            0.30,
+            0.30,
+            0.40,
         ],
         gap="medium",
     )
@@ -1645,9 +2529,9 @@ if page == "Operations Overview":
             "Risk Tier",
             [
                 "All Risk Tiers",
-                "High",
-                "Moderate",
-                "Low",
+                "HIGH",
+                "MODERATE",
+                "LOW",
             ],
         )
 
@@ -1686,38 +2570,14 @@ if page == "Operations Overview":
     )
 
 
-    if risk_filter == "High":
+    if risk_filter != "All Risk Tiers":
 
         unique_priority = (
             unique_priority[
                 unique_priority[
                     "risk_level"
                 ]
-                == "HIGH"
-            ]
-        )
-
-
-    elif risk_filter == "Moderate":
-
-        unique_priority = (
-            unique_priority[
-                unique_priority[
-                    "risk_level"
-                ]
-                == "MODERATE"
-            ]
-        )
-
-
-    elif risk_filter == "Low":
-
-        unique_priority = (
-            unique_priority[
-                unique_priority[
-                    "risk_level"
-                ]
-                == "LOW"
+                == risk_filter
             ]
         )
 
@@ -1751,7 +2611,8 @@ if page == "Operations Overview":
     ] = (
         unique_priority[
             "patient_id"
-        ].apply(
+        ]
+        .apply(
             short_patient_id
         )
     )
@@ -1764,6 +2625,7 @@ if page == "Operations Overview":
             .strip()
             .upper()
         )
+
 
         unique_priority = (
             unique_priority[
@@ -1779,17 +2641,15 @@ if page == "Operations Overview":
         )
 
 
-    st.caption(
-        f"{len(unique_priority):,} patients match the current filters"
-    )
-
-
     unique_priority[
         "Risk (%)"
     ] = (
         unique_priority[
             "readmission_probability_percent"
-        ].round(1)
+        ]
+        .round(
+            1
+        )
     )
 
 
@@ -1798,7 +2658,8 @@ if page == "Operations Overview":
     ] = (
         unique_priority[
             "intervention_recommended"
-        ].map(
+        ]
+        .map(
             {
                 True:
                     "RECOMMENDED",
@@ -1849,9 +2710,17 @@ if page == "Operations Overview":
     )
 
 
+    st.caption(
+        (
+            f"{len(unique_priority):,} patients "
+            f"match the current filters"
+        )
+    )
+
+
     st.dataframe(
         queue,
-        use_container_width=True,
+        width="stretch",
         hide_index=True,
         height=520,
 
@@ -1901,22 +2770,28 @@ if page == "Operations Overview":
 
 
         st.caption(
-            "Held-out patient-level validation on synthetic Synthea data. "
-            "No patients overlap between training and testing. "
-            "Not intended as clinical validation."
+            (
+                "Held-out patient-level validation on "
+                "synthetic Synthea data. "
+                "No patients overlap between training and testing. "
+                "Not intended as clinical validation."
+            )
         )
 
 
 # ============================================================
-# PATIENT REVIEW
+# PATIENT WORKUP
 # ============================================================
 
-elif page == "Patient Review":
+elif page == "Patient Workup":
 
     page_header(
-        "PATIENT REVIEW",
+        "PATIENT WORKUP",
         "Individual Risk Profile",
-        "Review a patient's readmission risk, recent history, clinical context, and model drivers.",
+        (
+            "Review longitudinal utilization, current modeled risk, "
+            "clinical context, and patient-specific model drivers."
+        ),
     )
 
 
@@ -1931,6 +2806,7 @@ elif page == "Patient Review":
 
 
     patient_lookup = {
+
         short_patient_id(
             patient_id
         ):
@@ -1963,80 +2839,88 @@ elif page == "Patient Review":
             ]
             == selected_patient
         ]
-        .sort_values(
-            "readmission_probability",
-            ascending=False,
-        )
         .copy()
     )
 
 
-    patient = (
-        patient_history.iloc[0]
-    )
+    # The production registry does not contain calendar admission dates.
+    # We therefore use cumulative prior admissions as encounter order.
 
-
-    c1, c2, c3, c4 = st.columns(
-        4,
-        gap="medium",
-    )
-
-
-    with c1:
-
-        metric_card(
-            "30-Day Risk",
-            f'{patient["readmission_probability_percent"]:.1f}%',
-            "Calibrated probability",
-            "metric-blue",
-        )
-
-
-    with c2:
-
-        metric_card(
-            "Risk Tier",
-            patient[
-                "risk_level"
+    patient_history = (
+        patient_history
+        .sort_values(
+            [
+                "previous_inpatient_admissions",
+                "readmission_probability",
             ],
-            "Population classification",
-            "metric-purple",
+            ascending=[
+                True,
+                True,
+            ],
         )
-
-
-    with c3:
-
-        review_status = (
-            "RECOMMENDED"
-            if bool(
-                patient[
-                    "intervention_recommended"
-                ]
-            )
-            else "NOT FLAGGED"
+        .reset_index(
+            drop=True
         )
+    )
 
 
-        metric_card(
-            "Review Status",
-            review_status,
-            "22% operating threshold",
-            "metric-cyan",
+    patient_history[
+        "Encounter Sequence"
+    ] = range(
+        1,
+        len(
+            patient_history
+        ) + 1,
+    )
+
+
+    patient = (
+        patient_history
+        .sort_values(
+            "readmission_probability",
+            ascending=False,
         )
+        .iloc[
+            0
+        ]
+    )
 
 
-    with c4:
+    st.html(
+        f"""
+<div class="patient-banner">
 
-        metric_card(
-            "Admissions / 90 Days",
-            int(
-                patient[
-                    "admissions_last_90_days"
-                ]
-            ),
-            "Recent inpatient history",
-            "metric-pink",
-        )
+    <div class="patient-id">
+        {selected_label}
+    </div>
+
+    <div class="patient-meta">
+        {len(patient_history)} recorded hospitalization(s) ·
+        displaying the patient's highest-risk scored encounter
+    </div>
+
+</div>
+"""
+    )
+
+
+    risk_signal(
+        patient[
+            "readmission_probability_percent"
+        ],
+
+        patient[
+            "risk_level"
+        ],
+
+        22.0,
+
+        bool(
+            patient[
+                "intervention_recommended"
+            ]
+        ),
+    )
 
 
     st.write("")
@@ -2044,16 +2928,20 @@ elif page == "Patient Review":
 
     section_header(
         "Why This Patient Scored This Way",
-        "The strongest patient-specific contributors to the model prediction.",
-    )
-
-
-    patient_data = row_to_model_input(
-        patient
+        (
+            "The strongest patient-specific contributors "
+            "to the current prediction."
+        ),
+        "SHAP",
     )
 
 
     try:
+
+        patient_data = row_to_model_input(
+            patient
+        )
+
 
         patient_drivers = explain_readmission(
             patient_data,
@@ -2067,12 +2955,12 @@ elif page == "Patient Review":
 
 
         st.caption(
-            "These contributors explain the model's prediction. "
-            "They do not establish that a factor causes or prevents readmission."
+            (
+                "These contributors explain the model's prediction. "
+                "They do not establish that a factor causes "
+                "or prevents readmission."
+            )
         )
-
-
-        factor_definitions()
 
 
     except Exception as error:
@@ -2080,6 +2968,7 @@ elif page == "Patient Review":
         st.warning(
             "Risk-driver explanation could not be generated."
         )
+
 
         st.caption(
             str(
@@ -2089,6 +2978,93 @@ elif page == "Patient Review":
 
 
     st.write("")
+
+
+    section_header(
+        "Risk Progression",
+        (
+            "Recorded encounters ordered by cumulative "
+            "prior inpatient utilization."
+        ),
+        "LONGITUDINAL",
+    )
+
+
+    progression = patient_history[
+        [
+            "Encounter Sequence",
+            "readmission_probability_percent",
+            "risk_level",
+            "actual_readmitted_30_days",
+        ]
+    ].copy()
+
+
+    progression_chart = (
+        alt.Chart(
+            progression
+        )
+        .mark_line(
+            point=True,
+            strokeWidth=2.5,
+            color="#38d9d0",
+        )
+        .encode(
+
+            x=alt.X(
+                "Encounter Sequence:O",
+                title="Encounter sequence",
+            ),
+
+            y=alt.Y(
+                "readmission_probability_percent:Q",
+                title="Calibrated risk (%)",
+
+                scale=alt.Scale(
+                    domain=[
+                        0,
+                        100,
+                    ]
+                ),
+            ),
+
+            tooltip=[
+
+                alt.Tooltip(
+                    "Encounter Sequence:O",
+                    title="Encounter",
+                ),
+
+                alt.Tooltip(
+                    "readmission_probability_percent:Q",
+                    title="Risk",
+                    format=".1f",
+                ),
+
+                alt.Tooltip(
+                    "risk_level:N",
+                    title="Risk Tier",
+                ),
+
+                alt.Tooltip(
+                    "actual_readmitted_30_days:Q",
+                    title="Readmitted",
+                ),
+            ],
+        )
+        .properties(
+            height=230,
+        )
+        .configure_view(
+            strokeOpacity=0,
+        )
+    )
+
+
+    st.altair_chart(
+        progression_chart,
+        width="stretch",
+    )
 
 
     history_col, clinical_col = st.columns(
@@ -2101,22 +3077,33 @@ elif page == "Patient Review":
 
         section_header(
             "Recent Patient History",
-            "Recent inpatient utilization and known readmission history.",
+            (
+                "Recent inpatient utilization "
+                "and known readmission history."
+            ),
+            "UTILIZATION",
         )
 
 
         recent_history = pd.DataFrame(
             {
                 "Metric": [
+
                     "Admissions in last 30 days",
+
                     "Admissions in last 90 days",
+
                     "Admissions in last 365 days",
+
                     "Prior readmissions in last 365 days",
+
                     "Days since last inpatient admission",
+
                     "Lifetime prior admissions",
                 ],
 
                 "Value": [
+
                     patient[
                         "admissions_last_30_days"
                     ],
@@ -2134,9 +3121,11 @@ elif page == "Patient Review":
                     ],
 
                     round(
-                        patient[
-                            "days_since_last_inpatient_admission"
-                        ],
+                        float(
+                            patient[
+                                "days_since_last_inpatient_admission"
+                            ]
+                        ),
                         1,
                     ),
 
@@ -2150,7 +3139,7 @@ elif page == "Patient Review":
 
         st.dataframe(
             recent_history,
-            use_container_width=True,
+            width="stretch",
             hide_index=True,
         )
 
@@ -2159,33 +3148,49 @@ elif page == "Patient Review":
 
         section_header(
             "Clinical Profile",
-            "Clinical complexity and documented conditions available in the registry.",
+            (
+                "Clinical complexity and documented "
+                "conditions available in the registry."
+            ),
+            "PROFILE",
         )
 
 
         clinical = pd.DataFrame(
             {
                 "Metric": [
+
                     "Age",
+
                     "Length of Stay",
+
                     "Condition Count",
+
                     "Medication Count",
+
                     "Procedure Count",
+
                     "BMI",
+
                     "Diabetes",
+
                     "Hypertension",
+
                     "Kidney Disease",
                 ],
 
                 "Value": [
+
                     patient[
                         "age_at_admission"
                     ],
 
                     round(
-                        patient[
-                            "length_of_stay"
-                        ],
+                        float(
+                            patient[
+                                "length_of_stay"
+                            ]
+                        ),
                         1,
                     ),
 
@@ -2202,39 +3207,46 @@ elif page == "Patient Review":
                     ],
 
                     round(
-                        safe_number(
-                            patient[
-                                "bmi"
-                            ],
-                            0,
+                        float(
+                            safe_number(
+                                patient[
+                                    "bmi"
+                                ],
+                                0,
+                            )
                         ),
                         1,
                     ),
 
-                    "Yes"
-                    if bool(
-                        patient[
-                            "diabetes"
-                        ]
-                    )
-                    else "No",
+                    (
+                        "Yes"
+                        if bool(
+                            patient[
+                                "diabetes"
+                            ]
+                        )
+                        else "No"
+                    ),
 
-                    "Yes"
-                    if bool(
-                        patient[
-                            "hypertension"
-                        ]
-                    )
-                    else "No",
+                    (
+                        "Yes"
+                        if bool(
+                            patient[
+                                "hypertension"
+                            ]
+                        )
+                        else "No"
+                    ),
 
-                    "Yes"
-                    if bool(
-                        patient[
-                            "kidney_disease"
-                        ]
-                    )
-                    else "No",
-
+                    (
+                        "Yes"
+                        if bool(
+                            patient[
+                                "kidney_disease"
+                            ]
+                        )
+                        else "No"
+                    ),
                 ],
             }
         )
@@ -2242,7 +3254,7 @@ elif page == "Patient Review":
 
         st.dataframe(
             clinical,
-            use_container_width=True,
+            width="stretch",
             hide_index=True,
         )
 
@@ -2251,41 +3263,55 @@ elif page == "Patient Review":
 
 
     section_header(
-        "Prior Encounters",
-        "Modeled risk and observed outcomes across this patient's recorded hospitalizations.",
+        "Encounter Ledger",
+        (
+            "All scored encounters available "
+            "for the selected patient."
+        ),
+        f"{len(patient_history)} RECORD(S)",
     )
 
 
-    encounter_table = patient_history[
+    ledger = patient_history[
         [
+            "Encounter Sequence",
+
             "encounter_id",
+
             "readmission_probability_percent",
+
             "risk_level",
+
             "intervention_recommended",
+
             "actual_readmitted_30_days",
+
             "admissions_last_90_days",
+
             "prior_readmissions_last_365_days",
         ]
     ].copy()
 
 
-    encounter_table[
+    ledger[
         "Encounter"
     ] = (
-        encounter_table[
+        ledger[
             "encounter_id"
-        ].apply(
+        ]
+        .apply(
             short_encounter_id
         )
     )
 
 
-    encounter_table[
+    ledger[
         "Review Status"
     ] = (
-        encounter_table[
+        ledger[
             "intervention_recommended"
-        ].map(
+        ]
+        .map(
             {
                 True:
                     "RECOMMENDED",
@@ -2297,21 +3323,33 @@ elif page == "Patient Review":
     )
 
 
-    encounter_table = encounter_table[
+    ledger = ledger[
         [
+            "Encounter Sequence",
+
             "Encounter",
+
             "readmission_probability_percent",
+
             "risk_level",
+
             "Review Status",
+
             "actual_readmitted_30_days",
+
             "admissions_last_90_days",
+
             "prior_readmissions_last_365_days",
         ]
     ]
 
 
-    encounter_table = encounter_table.rename(
+    ledger = ledger.rename(
         columns={
+
+            "Encounter Sequence":
+                "Seq",
+
             "readmission_probability_percent":
                 "Risk (%)",
 
@@ -2331,8 +3369,8 @@ elif page == "Patient Review":
 
 
     st.dataframe(
-        encounter_table,
-        use_container_width=True,
+        ledger,
+        width="stretch",
         hide_index=True,
 
         column_config={
@@ -2347,26 +3385,6 @@ elif page == "Patient Review":
     )
 
 
-    with st.expander(
-        "What does Review Status mean?"
-    ):
-
-        st.markdown(
-            """
-**Review Status** indicates whether the encounter crossed Admitra's operating threshold for additional review.
-
-The current history-aware model uses a **22% calibrated readmission probability threshold**.
-
-- Below 22%: the encounter is not automatically flagged.
-- At or above 22%: additional review is recommended.
-
-Risk Tier and Review Status are separate. Risk Tier describes where the patient's probability falls within the modeled population, while Review Status determines whether the patient enters the operational review queue.
-
-This threshold was selected using grouped out-of-fold validation and is not a clinically validated treatment guideline.
-"""
-        )
-
-
 # ============================================================
 # RISK ASSESSMENT
 # ============================================================
@@ -2376,7 +3394,10 @@ elif page == "Risk Assessment":
     page_header(
         "RISK ASSESSMENT",
         "Readmission Risk Assessment",
-        "Estimate 30-day readmission risk using recent patient history and clinical context.",
+        (
+            "Estimate 30-day readmission risk using the "
+            "production 16-feature history-aware model."
+        ),
     )
 
 
@@ -2401,6 +3422,7 @@ elif page == "Risk Assessment":
 
 
     presets = {
+
         "Low Risk":
             low_example,
 
@@ -2414,7 +3436,11 @@ elif page == "Risk Assessment":
 
     section_header(
         "Quick Start",
-        "Load a representative synthetic patient or enter a custom history.",
+        (
+            "Load a representative synthetic patient "
+            "or enter a custom history."
+        ),
+        "PRESETS",
     )
 
 
@@ -2427,16 +3453,18 @@ elif page == "Risk Assessment":
 
         if st.button(
             "Low-Risk Example",
-            use_container_width=True,
+            width="stretch",
         ):
 
             st.session_state[
                 "assessment_preset"
             ] = "Low Risk"
 
+
             st.session_state[
                 "preset_counter"
             ] += 1
+
 
             st.rerun()
 
@@ -2445,16 +3473,18 @@ elif page == "Risk Assessment":
 
         if st.button(
             "Moderate-Risk Example",
-            use_container_width=True,
+            width="stretch",
         ):
 
             st.session_state[
                 "assessment_preset"
             ] = "Moderate Risk"
 
+
             st.session_state[
                 "preset_counter"
             ] += 1
+
 
             st.rerun()
 
@@ -2463,16 +3493,18 @@ elif page == "Risk Assessment":
 
         if st.button(
             "High-Risk Example",
-            use_container_width=True,
+            width="stretch",
         ):
 
             st.session_state[
                 "assessment_preset"
             ] = "High Risk"
 
+
             st.session_state[
                 "preset_counter"
             ] += 1
+
 
             st.rerun()
 
@@ -2481,16 +3513,18 @@ elif page == "Risk Assessment":
 
         if st.button(
             "Clear Form",
-            use_container_width=True,
+            width="stretch",
         ):
 
             st.session_state[
                 "assessment_preset"
             ] = "Custom"
 
+
             st.session_state[
                 "preset_counter"
             ] += 1
+
 
             st.rerun()
 
@@ -2505,29 +3539,38 @@ elif page == "Risk Assessment":
     if preset_name == "Custom":
 
         defaults = {
+
             "age": 65,
+
             "los": 5.0,
 
             "previous_admissions": 0,
+
             "admissions_30": 0,
+
             "admissions_90": 0,
+
             "admissions_365": 0,
+
             "days_since": 365.0,
+
             "prior_readmissions": 0,
 
             "conditions": 2,
+
             "medications": 5,
+
             "procedures": 3,
 
             "diabetes": False,
-            "hypertension": False,
-            "kidney_disease": False,
 
-            "heart_failure": False,
-            "chronic_lung_disease": False,
+            "hypertension": False,
+
+            "kidney_disease": False,
 
             "bmi": 27.0,
         }
+
 
     else:
 
@@ -2539,10 +3582,12 @@ elif page == "Risk Assessment":
 
 
         st.info(
-            f'{preset_name} example loaded from the scored '
-            f'Synthea registry. Stored modeled risk: '
-            f'{defaults["source_probability"]:.1f}% '
-            f'({defaults["source_risk_level"]}).'
+            (
+                f'{preset_name} example loaded from the scored '
+                f'Synthea registry. Stored modeled risk: '
+                f'{defaults["source_probability"]:.1f}% '
+                f'({defaults["source_risk_level"]}).'
+            )
         )
 
 
@@ -2553,392 +3598,443 @@ elif page == "Risk Assessment":
     )
 
 
-    # --------------------------------------------------------
-    # PATIENT BASICS
-    # --------------------------------------------------------
-
-    st.write("")
-
-
-    section_header(
-        "Patient Basics",
-        "Core information about the current hospitalization.",
+    left, right = st.columns(
+        [
+            1.05,
+            0.95,
+        ],
+        gap="large",
     )
 
 
-    p1, p2, p3 = st.columns(
-        3,
-        gap="medium",
-    )
+    with left:
 
-
-    with p1:
-
-        age = st.number_input(
-            "Age",
-            min_value=0,
-            max_value=120,
-            value=int(
-                defaults[
-                    "age"
-                ]
+        section_header(
+            "Patient Inputs",
+            (
+                "Current encounter, longitudinal history, "
+                "and clinical complexity."
             ),
-            key=(
-                f"age_"
-                f"{key_suffix}"
-            ),
+            "16 FEATURES",
         )
 
 
-    with p2:
-
-        length_of_stay = st.number_input(
-            "Length of Stay (days)",
-            min_value=0.0,
-            value=float(
-                defaults[
-                    "los"
-                ]
-            ),
-            step=0.5,
-            key=(
-                f"los_"
-                f"{key_suffix}"
-            ),
+        p1, p2, p3 = st.columns(
+            3
         )
 
 
-    with p3:
+        with p1:
 
-        bmi = st.number_input(
-            "BMI",
-            min_value=10.0,
-            max_value=80.0,
-            value=float(
-                defaults[
-                    "bmi"
-                ]
-            ),
-            step=0.1,
-            key=(
-                f"bmi_"
-                f"{key_suffix}"
-            ),
+            age = st.number_input(
+                "Age",
+                min_value=0,
+                max_value=120,
+
+                value=int(
+                    defaults[
+                        "age"
+                    ]
+                ),
+
+                key=(
+                    f"age_"
+                    f"{key_suffix}"
+                ),
+            )
+
+
+        with p2:
+
+            length_of_stay = st.number_input(
+                "Length of Stay",
+                min_value=0.0,
+
+                value=float(
+                    defaults[
+                        "los"
+                    ]
+                ),
+
+                step=0.5,
+
+                key=(
+                    f"los_"
+                    f"{key_suffix}"
+                ),
+            )
+
+
+        with p3:
+
+            bmi = st.number_input(
+                "BMI",
+                min_value=10.0,
+                max_value=80.0,
+
+                value=float(
+                    defaults[
+                        "bmi"
+                    ]
+                ),
+
+                step=0.1,
+
+                key=(
+                    f"bmi_"
+                    f"{key_suffix}"
+                ),
+            )
+
+
+        st.markdown(
+            "##### Recent Admission History"
         )
 
 
-    # --------------------------------------------------------
-    # RECENT ADMISSION HISTORY
-    # --------------------------------------------------------
-
-    st.write("")
-
-
-    section_header(
-        "Recent Admission History",
-        "Recent inpatient utilization is a major component of the history-aware model.",
-    )
-
-
-    h1, h2, h3 = st.columns(
-        3,
-        gap="medium",
-    )
-
-
-    with h1:
-
-        admissions_30 = st.number_input(
-            "Admissions in Last 30 Days",
-            min_value=0,
-            max_value=20,
-            value=int(
-                defaults[
-                    "admissions_30"
-                ]
-            ),
-            key=(
-                f"admissions30_"
-                f"{key_suffix}"
-            ),
+        h1, h2, h3 = st.columns(
+            3
         )
 
 
-    with h2:
+        with h1:
 
-        admissions_90 = st.number_input(
-            "Admissions in Last 90 Days",
-            min_value=0,
-            max_value=30,
-            value=int(
-                defaults[
-                    "admissions_90"
-                ]
-            ),
-            key=(
-                f"admissions90_"
-                f"{key_suffix}"
-            ),
+            admissions_30 = st.number_input(
+                "Admissions / 30 Days",
+                min_value=0,
+                max_value=20,
+
+                value=int(
+                    defaults[
+                        "admissions_30"
+                    ]
+                ),
+
+                key=(
+                    f"admissions30_"
+                    f"{key_suffix}"
+                ),
+            )
+
+
+        with h2:
+
+            admissions_90 = st.number_input(
+                "Admissions / 90 Days",
+                min_value=0,
+                max_value=30,
+
+                value=int(
+                    defaults[
+                        "admissions_90"
+                    ]
+                ),
+
+                key=(
+                    f"admissions90_"
+                    f"{key_suffix}"
+                ),
+            )
+
+
+        with h3:
+
+            admissions_365 = st.number_input(
+                "Admissions / 365 Days",
+                min_value=0,
+                max_value=100,
+
+                value=int(
+                    defaults[
+                        "admissions_365"
+                    ]
+                ),
+
+                key=(
+                    f"admissions365_"
+                    f"{key_suffix}"
+                ),
+            )
+
+
+        h4, h5, h6 = st.columns(
+            3
         )
 
 
-    with h3:
+        with h4:
 
-        admissions_365 = st.number_input(
-            "Admissions in Last 365 Days",
-            min_value=0,
-            max_value=100,
-            value=int(
-                defaults[
-                    "admissions_365"
-                ]
-            ),
-            key=(
-                f"admissions365_"
-                f"{key_suffix}"
-            ),
+            previous_admissions = st.number_input(
+                "Total Prior Admissions",
+                min_value=0,
+                max_value=500,
+
+                value=int(
+                    defaults[
+                        "previous_admissions"
+                    ]
+                ),
+
+                key=(
+                    f"previous_admissions_"
+                    f"{key_suffix}"
+                ),
+            )
+
+
+        with h5:
+
+            prior_readmissions = st.number_input(
+                "Prior Readmissions / Year",
+                min_value=0,
+                max_value=50,
+
+                value=int(
+                    defaults[
+                        "prior_readmissions"
+                    ]
+                ),
+
+                key=(
+                    f"readmissions365_"
+                    f"{key_suffix}"
+                ),
+            )
+
+
+        with h6:
+
+            days_since = st.number_input(
+                "Days Since Last Admission",
+                min_value=0.0,
+                max_value=365.0,
+
+                value=float(
+                    defaults[
+                        "days_since"
+                    ]
+                ),
+
+                step=1.0,
+
+                key=(
+                    f"days_since_"
+                    f"{key_suffix}"
+                ),
+
+                help=(
+                    "Use 365 when the patient has no known prior "
+                    "inpatient admission or the last admission "
+                    "was more than one year ago."
+                ),
+            )
+
+
+        st.markdown(
+            "##### Clinical Complexity"
         )
 
 
-    h4, h5, h6 = st.columns(
-        3,
-        gap="medium",
-    )
-
-
-    with h4:
-
-        previous_admissions = st.number_input(
-            "Total Prior Inpatient Admissions",
-            min_value=0,
-            max_value=500,
-            value=int(
-                defaults[
-                    "previous_admissions"
-                ]
-            ),
-            key=(
-                f"previous_admissions_"
-                f"{key_suffix}"
-            ),
+        c1, c2, c3 = st.columns(
+            3
         )
 
 
-    with h5:
+        with c1:
 
-        prior_readmissions = st.number_input(
-            "Prior Readmissions in Last 365 Days",
-            min_value=0,
-            max_value=50,
-            value=int(
-                defaults[
-                    "prior_readmissions"
-                ]
-            ),
-            key=(
-                f"readmissions365_"
-                f"{key_suffix}"
-            ),
+            condition_count = st.number_input(
+                "Active Conditions",
+                min_value=0,
+                max_value=100,
+
+                value=int(
+                    defaults[
+                        "conditions"
+                    ]
+                ),
+
+                key=(
+                    f"conditions_"
+                    f"{key_suffix}"
+                ),
+            )
+
+
+        with c2:
+
+            medication_count = st.number_input(
+                "Medication Count",
+                min_value=0,
+                max_value=100,
+
+                value=int(
+                    defaults[
+                        "medications"
+                    ]
+                ),
+
+                key=(
+                    f"medications_"
+                    f"{key_suffix}"
+                ),
+            )
+
+
+        with c3:
+
+            procedure_count = st.number_input(
+                "Procedure Count",
+                min_value=0,
+                max_value=200,
+
+                value=int(
+                    defaults[
+                        "procedures"
+                    ]
+                ),
+
+                key=(
+                    f"procedures_"
+                    f"{key_suffix}"
+                ),
+            )
+
+
+        st.markdown(
+            "##### Documented Conditions"
         )
 
 
-    with h6:
-
-        days_since = st.number_input(
-            "Days Since Last Inpatient Admission",
-            min_value=0.0,
-            max_value=365.0,
-            value=float(
-                defaults[
-                    "days_since"
-                ]
-            ),
-            step=1.0,
-            key=(
-                f"days_since_"
-                f"{key_suffix}"
-            ),
-            help=(
-                "Use 365 when the patient has no known prior "
-                "inpatient admission or the last admission "
-                "was more than one year ago."
-            ),
+        d1, d2, d3 = st.columns(
+            3
         )
 
 
-    if admissions_30 > admissions_90:
+        with d1:
 
-        st.warning(
-            "Admissions in the last 30 days cannot exceed "
-            "admissions in the last 90 days. Admitra will "
-            "normalize the history before scoring."
+            diabetes = st.checkbox(
+                "Diabetes",
+
+                value=defaults[
+                    "diabetes"
+                ],
+
+                key=(
+                    f"diabetes_"
+                    f"{key_suffix}"
+                ),
+            )
+
+
+        with d2:
+
+            hypertension = st.checkbox(
+                "Hypertension",
+
+                value=defaults[
+                    "hypertension"
+                ],
+
+                key=(
+                    f"hypertension_"
+                    f"{key_suffix}"
+                ),
+            )
+
+
+        with d3:
+
+            kidney_disease = st.checkbox(
+                "Kidney Disease",
+
+                value=defaults[
+                    "kidney_disease"
+                ],
+
+                key=(
+                    f"kidney_"
+                    f"{key_suffix}"
+                ),
+            )
+
+
+    with right:
+
+        section_header(
+            "Assessment",
+            (
+                "Submit the encounter to the calibrated "
+                "production model."
+            ),
+            "22% REVIEW THRESHOLD",
         )
 
 
-    if admissions_90 > admissions_365:
+        st.html(
+            """
+<div class="panel-card">
 
-        st.warning(
-            "Admissions in the last 90 days cannot exceed "
-            "admissions in the last 365 days. Admitra will "
-            "normalize the history before scoring."
+    <div class="review-label">
+        Operational interpretation
+    </div>
+
+    <div
+        class="review-sub"
+        style="margin-top:0.4rem"
+    >
+        Admitra separates estimated readmission risk
+        from the operational review threshold.
+
+        A review flag does not mean the patient
+        will be readmitted.
+    </div>
+
+</div>
+"""
         )
 
 
-    if admissions_365 > previous_admissions:
+        st.write("")
 
-        st.warning(
-            "Admissions in the last year cannot exceed total "
-            "prior inpatient admissions. Admitra will normalize "
-            "the history before scoring."
+
+        analyze = st.button(
+            "Analyze Readmission Risk",
+            type="primary",
+            width="stretch",
         )
 
 
-    # --------------------------------------------------------
-    # CLINICAL COMPLEXITY
-    # --------------------------------------------------------
+        if admissions_30 > admissions_90:
 
-    st.write("")
-
-
-    section_header(
-        "Clinical Complexity",
-        "Provide the current patient's condition and treatment profile.",
-    )
+            st.warning(
+                (
+                    "Admissions in the last 30 days cannot exceed "
+                    "admissions in the last 90 days. "
+                    "Admitra will normalize the history before scoring."
+                )
+            )
 
 
-    c1, c2, c3 = st.columns(
-        3,
-        gap="medium",
-    )
+        if admissions_90 > admissions_365:
+
+            st.warning(
+                (
+                    "Admissions in the last 90 days cannot exceed "
+                    "admissions in the last 365 days. "
+                    "Admitra will normalize the history before scoring."
+                )
+            )
 
 
-    with c1:
+        if admissions_365 > previous_admissions:
 
-        condition_count = st.number_input(
-            "Active Conditions",
-            min_value=0,
-            max_value=100,
-            value=int(
-                defaults[
-                    "conditions"
-                ]
-            ),
-            key=(
-                f"conditions_"
-                f"{key_suffix}"
-            ),
-        )
-
-
-    with c2:
-
-        medication_count = st.number_input(
-            "Medication Count",
-            min_value=0,
-            max_value=100,
-            value=int(
-                defaults[
-                    "medications"
-                ]
-            ),
-            key=(
-                f"medications_"
-                f"{key_suffix}"
-            ),
-        )
-
-
-    with c3:
-
-        procedure_count = st.number_input(
-            "Procedure Count",
-            min_value=0,
-            max_value=200,
-            value=int(
-                defaults[
-                    "procedures"
-                ]
-            ),
-            key=(
-                f"procedures_"
-                f"{key_suffix}"
-            ),
-        )
-
-
-    # --------------------------------------------------------
-    # DOCUMENTED CONDITIONS
-    # --------------------------------------------------------
-
-    st.write("")
-
-
-    section_header(
-        "Documented Conditions",
-        "Select chronic conditions documented for this patient.",
-    )
-
-
-    d1, d2, d3 = st.columns(
-        3,
-        gap="medium",
-    )
-
-
-    with d1:
-
-        diabetes = st.checkbox(
-            "Diabetes",
-            value=defaults[
-                "diabetes"
-            ],
-            key=(
-                f"diabetes_"
-                f"{key_suffix}"
-            ),
-        )
-
-
-    with d2:
-
-        hypertension = st.checkbox(
-            "Hypertension",
-            value=defaults[
-                "hypertension"
-            ],
-            key=(
-                f"hypertension_"
-                f"{key_suffix}"
-            ),
-        )
-
-
-    with d3:
-
-        kidney_disease = st.checkbox(
-            "Kidney Disease",
-            value=defaults[
-                "kidney_disease"
-            ],
-            key=(
-                f"kidney_"
-                f"{key_suffix}"
-            ),
-        )
-
-
-    # --------------------------------------------------------
-    # ANALYZE
-    # --------------------------------------------------------
-
-    st.write("")
-
-
-    analyze = st.button(
-        "Analyze Readmission Risk",
-        type="primary",
-        use_container_width=True,
-    )
+            st.warning(
+                (
+                    "Admissions in the last year cannot exceed total "
+                    "prior inpatient admissions. Admitra will normalize "
+                    "the history before scoring."
+                )
+            )
 
 
     if analyze:
@@ -2952,6 +4048,7 @@ elif page == "Risk Assessment":
 
 
         patient_data = {
+
             "age_at_admission":
                 age,
 
@@ -3026,102 +4123,31 @@ elif page == "Risk Assessment":
 
             section_header(
                 "Risk Intelligence",
-                "Calibrated 30-day readmission prediction and review status.",
+                (
+                    "Calibrated 30-day readmission prediction "
+                    "and operational review status."
+                ),
+                "RESULT",
             )
 
 
-            r1, r2, r3 = st.columns(
-                3,
-                gap="medium",
+            risk_signal(
+                result[
+                    "probability_percent"
+                ],
+
+                result[
+                    "risk_level"
+                ],
+
+                result[
+                    "production_threshold_percent"
+                ],
+
+                result[
+                    "intervention_recommended"
+                ],
             )
-
-
-            with r1:
-
-                metric_card(
-                    "30-Day Risk",
-                    f'{result["probability_percent"]}%',
-                    "Calibrated estimate of 30-day readmission probability",
-                    "metric-blue",
-                )
-
-
-            with r2:
-
-                metric_card(
-                    "Risk Tier",
-                    result[
-                        "risk_level"
-                    ],
-                    "Population risk band",
-                    "metric-purple",
-                )
-
-
-            with r3:
-
-                review_status = (
-                    "RECOMMENDED"
-                    if result[
-                        "intervention_recommended"
-                    ]
-                    else "NOT FLAGGED"
-                )
-
-
-                metric_card(
-                    "Review Status",
-                    review_status,
-                    "22% operating threshold",
-                    "metric-cyan",
-                )
-
-
-            st.write("")
-
-
-            if result[
-                "intervention_recommended"
-            ]:
-
-                st.warning(
-                    f'**Additional review recommended.** '
-                    f'This patient exceeds Admitra’s '
-                    f'{result["production_threshold_percent"]}% '
-                    f'operating threshold.'
-                )
-
-            else:
-
-                st.success(
-                    f'**No additional review flag.** '
-                    f'This patient remains below Admitra’s '
-                    f'{result["production_threshold_percent"]}% '
-                    f'operating threshold.'
-                )
-
-
-            with st.expander(
-                "What does the 22% threshold mean?"
-            ):
-
-                st.markdown(
-                    f"""
-The **{result["production_threshold_percent"]}% review threshold** is the calibrated readmission probability at which Admitra places an encounter into the review queue.
-
-It was selected using **patient-grouped out-of-fold validation**. The operating rule chose the threshold with the highest F1 score while maintaining at least 70% recall.
-
-For the final held-out test population, the model achieved approximately:
-
-- **80.1% recall**
-- **52.3% precision**
-- **0.633 F1**
-- **0.932 ROC-AUC**
-- **0.754 PR-AUC**
-
-The threshold is used for prioritization. It is not a clinical treatment guideline.
-"""
-                )
 
 
             st.write("")
@@ -3129,7 +4155,11 @@ The threshold is used for prioritization. It is not a clinical treatment guideli
 
             section_header(
                 "Why This Patient Scored This Way",
-                "The strongest patient-specific contributors to this prediction.",
+                (
+                    "The strongest patient-specific contributors "
+                    "to this prediction."
+                ),
+                "SHAP",
             )
 
 
@@ -3139,51 +4169,33 @@ The threshold is used for prioritization. It is not a clinical treatment guideli
 
 
             st.caption(
-                "These contributors explain the model's prediction. "
-                "They do not establish that a factor causes or prevents readmission."
+                (
+                    "These contributors explain the model's prediction. "
+                    "They do not establish that a factor causes "
+                    "or prevents readmission."
+                )
             )
 
 
-            factor_definitions()
-
-
             with st.expander(
-                "Technical Prediction Details"
+                "Validation and threshold details"
             ):
 
-                st.write(
-                    f'**Calibrated probability:** '
-                    f'{result["probability_percent"]}%'
-                )
+                st.markdown(
+                    f"""
+The **{result["production_threshold_percent"]}% review threshold** was selected using patient-grouped out-of-fold validation.
 
-                st.write(
-                    f'**Raw XGBoost probability:** '
-                    f'{result["raw_probability_percent"]}%'
-                )
+Held-out production-cohort performance:
 
-                st.write(
-                    f'**Risk tier:** '
-                    f'{result["risk_level"]}'
-                )
+- ROC-AUC: **0.932**
+- PR-AUC: **0.754**
+- Brier score: **0.0559**
+- Recall at threshold: **80.1%**
+- Precision at threshold: **52.3%**
+- F1 at threshold: **0.633**
 
-                st.write(
-                    f'**Review status:** '
-                    f'{review_status}'
-                )
-
-                st.write(
-                    f'**Review threshold:** '
-                    f'{result["production_threshold_percent"]}%'
-                )
-
-                st.write(
-                    f'**Low / Moderate cutoff:** '
-                    f'{result["low_cutoff_percent"]}%'
-                )
-
-                st.write(
-                    f'**Moderate / High cutoff:** '
-                    f'{result["high_cutoff_percent"]}%'
+The threshold is an operational prioritization rule for this synthetic demonstration and is not a clinical treatment guideline.
+"""
                 )
 
 
@@ -3192,6 +4204,7 @@ The threshold is used for prioritization. It is not a clinical treatment guideli
             st.error(
                 "Unable to generate the assessment."
             )
+
 
             st.exception(
                 error
@@ -3202,14 +4215,14 @@ The threshold is used for prioritization. It is not a clinical treatment guideli
 # DISCLAIMER
 # ============================================================
 
-st.markdown(
-    (
-        '<div class="disclaimer">'
-        'Admitra is a portfolio demonstration using synthetic '
-        'Synthea healthcare data. Predictions are generated by '
-        'a history-aware calibrated XGBoost model and are not '
-        'intended for clinical use.'
-        '</div>'
-    ),
-    unsafe_allow_html=True,
+st.html(
+    """
+<div class="disclaimer">
+
+Admitra is a portfolio demonstration using synthetic Synthea healthcare data.
+Predictions are generated by a history-aware calibrated XGBoost model
+and are not intended for clinical use.
+
+</div>
+"""
 )
