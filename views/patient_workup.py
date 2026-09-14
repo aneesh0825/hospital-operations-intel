@@ -19,20 +19,33 @@ def _sync_selected_patient(labels: dict[str, object]) -> None:
 
 
 def _render_progression(history: pd.DataFrame) -> None:
+    tooltips = [
+        alt.Tooltip("Encounter Sequence:O", title="Encounter"),
+        alt.Tooltip("readmission_probability_percent:Q", title="Risk", format=".1f"),
+        alt.Tooltip("risk_level:N", title="Risk tier"),
+        alt.Tooltip("actual_readmitted_30_days:Q", title="Observed 30-day readmission"),
+    ]
     base = alt.Chart(history).encode(
         x=alt.X("Encounter Sequence:O", title="Encounter sequence"),
         y=alt.Y("readmission_probability_percent:Q", title="Calibrated risk (%)", scale=alt.Scale(domain=[0, 100])),
-        tooltip=[
-            alt.Tooltip("Encounter Sequence:O", title="Encounter"),
-            alt.Tooltip("readmission_probability_percent:Q", title="Risk", format=".1f"),
-            alt.Tooltip("risk_level:N", title="Risk tier"),
-            alt.Tooltip("actual_readmitted_30_days:Q", title="Observed 30-day readmission"),
-        ],
     )
-    line = base.mark_line(point=True, strokeWidth=2.5, color="#38d9d0")
+    line = base.mark_line(strokeWidth=2.5, color="#38d9d0").encode(
+        tooltip=tooltips
+    )
     threshold = alt.Chart(pd.DataFrame({"threshold": [PRODUCTION_THRESHOLD_PERCENT]})).mark_rule(color="#f3c95f", strokeDash=[6, 4], strokeWidth=2).encode(y="threshold:Q")
-    observed = base.transform_filter(alt.datum.actual_readmitted_30_days == 1).mark_point(shape="diamond", size=110, filled=True, color="#ff7485")
-    st.altair_chart((line + threshold + observed).properties(height=245), width="stretch")
+    points = base.mark_point(filled=True, size=72).encode(
+        shape=alt.condition(
+            alt.datum.actual_readmitted_30_days == 1,
+            alt.value("diamond"),
+            alt.value("circle"),
+        ),
+        color=alt.condition(
+            alt.datum.actual_readmitted_30_days == 1,
+            alt.value("#ff7485"),
+            alt.value("#38d9d0"),
+        ),
+    )
+    st.altair_chart((line + points + threshold).properties(height=245), width="stretch")
     st.caption("Dashed line: 22% operational review threshold. Diamonds: observed 30-day readmissions.")
 
 

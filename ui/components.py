@@ -86,17 +86,60 @@ def risk_signal(
         else "No review flag"
     )
 
+    risk_class = f"risk-{risk_level.lower()}"
+    probability_position = min(
+        max(probability, 0),
+        100,
+    )
+
     st.html(
         (
-            '<div class="risk-panel">'
+            f'<div class="risk-panel {escape(risk_class)}">'
             '<div class="panel-label">'
             'Calibrated 30-day readmission risk'
             '</div>'
             f'<div class="risk-number">{probability:.1f}%</div>'
+            '<div class="risk-threshold">'
+            '<div class="risk-threshold-track">'
+            f'<span class="risk-threshold-fill" style="--risk-position:{probability_position:.1f}%"></span>'
+            f'<span class="risk-threshold-marker" style="--threshold-position:{threshold_percent:.1f}%"></span>'
+            '</div>'
+            '<div class="risk-threshold-range">'
+            '<span>0%</span><span>100%</span>'
+            '</div>'
+            f'<div class="risk-threshold-note" style="--threshold-position:{threshold_percent:.1f}%">'
+            f'{threshold_percent:.0f}% review threshold'
+            '</div>'
+            '</div>'
             '<div class="risk-detail">'
             f'{escape(risk_level.title())} risk · '
             f'{escape(status)} · '
             f'{threshold_percent:.0f}% operational threshold'
+            '</div>'
+            '</div>'
+        )
+    )
+
+
+def risk_empty_state(
+    threshold_percent: float,
+) -> None:
+    """Render a non-numeric placeholder until an assessment is submitted."""
+
+    st.html(
+        (
+            '<div class="risk-empty-state">'
+            '<div class="panel-label">Calibrated risk</div>'
+            '<div class="risk-empty-number">— %</div>'
+            '<div class="risk-empty-caption">Risk result appears after assessment</div>'
+            '<div class="risk-threshold">'
+            '<div class="risk-threshold-track">'
+            f'<span class="risk-threshold-marker" style="--threshold-position:{threshold_percent:.1f}%"></span>'
+            '</div>'
+            '<div class="risk-threshold-range"><span>0%</span><span>100%</span></div>'
+            f'<div class="risk-threshold-note" style="--threshold-position:{threshold_percent:.1f}%">'
+            f'{threshold_percent:.0f}% review threshold'
+            '</div>'
             '</div>'
             '</div>'
         )

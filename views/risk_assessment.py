@@ -8,7 +8,13 @@ import streamlit as st
 from config.constants import PRODUCTION_THRESHOLD_PERCENT
 from services.registry import row_to_model_input
 from src.predict_readmission import explain_readmission, predict_readmission
-from ui.components import page_header, render_drivers, risk_signal, section_header
+from ui.components import (
+    page_header,
+    render_drivers,
+    risk_empty_state,
+    risk_signal,
+    section_header,
+)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -32,14 +38,15 @@ def _custom_defaults() -> dict[str, object]:
 
 def render(registry: pd.DataFrame) -> None:
     page_header("RISK ASSESSMENT", "Readmission Risk Assessment", "Score a current encounter with the production history-aware model, then review the calibrated result and its strongest contributors.")
-    preset = st.radio("Starting point", ["Custom", "Low Risk", "Moderate Risk", "High Risk"], horizontal=True, key="assessment_preset")
+    with st.container(key="assessment_preset_control"):
+        preset = st.radio("Starting point", ["Custom", "Low Risk", "Moderate Risk", "High Risk"], horizontal=True, key="assessment_preset")
     defaults = _custom_defaults() if preset == "Custom" else _registry_defaults(registry, preset.split()[0].upper())
     if preset != "Custom":
         st.info(f"{preset} example loaded from the scored synthetic registry.")
 
     input_column, summary_column = st.columns((0.58, 0.42), gap="large")
     with input_column:
-        with st.container(border=True):
+        with st.container(border=True, key="assessment_input_card"):
             section_header("Patient inputs", "Current encounter, longitudinal history, and clinical complexity.", "16 FEATURES")
             with st.form("risk_assessment"):
                 left, right = st.columns(2)
@@ -64,10 +71,10 @@ def render(registry: pd.DataFrame) -> None:
                 analyze = st.form_submit_button("Analyze readmission risk", type="primary", width="stretch")
 
     with summary_column:
-        with st.container(border=True):
+        with st.container(border=True, key="assessment_summary_card"):
             section_header("Assessment summary", "Calibrated probability, review status, and model explanation.", "22% THRESHOLD")
             if not analyze:
-                st.markdown("Enter encounter details and run the assessment to see the calibrated readmission estimate.")
+                risk_empty_state(PRODUCTION_THRESHOLD_PERCENT)
                 st.caption(f"The {PRODUCTION_THRESHOLD_PERCENT:.0f}% operational threshold prioritizes review. It is not a treatment recommendation.")
                 return
             patient_data = {
