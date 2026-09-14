@@ -2,11 +2,11 @@
 
 **History-aware machine learning for 30-day hospital readmission risk assessment**
 
-Admitra is an end-to-end machine learning project that estimates a patient's probability of hospital readmission within 30 days. It combines longitudinal healthcare utilization, clinical characteristics, calibrated XGBoost predictions, patient-specific explanations, and an interactive Streamlit application.
+Admitra estimates 30-day hospital readmission risk from synthetic patient records, with an emphasis on a patient's recent hospitalization history. The system combines an XGBoost classifier with probability calibration and patient-level explanations, then surfaces predictions through a Streamlit interface for population and encounter-level review.
 
-The project uses synthetic electronic health record data generated with Synthea. It is intended to demonstrate applied machine learning, healthcare analytics, model validation, probability calibration, and explainable AI.
+The data comes from Synthea, so no real patient records or protected health information are used.
 
-> **Important:** Admitra is a portfolio and research project built with synthetic data. It is not a medical device and should not be used for clinical decision-making.
+> **Important:** Admitra is an experimental project built with synthetic data. It is not a medical device and should not be used for clinical decision-making.
 
 ## What Admitra Does
 
@@ -14,7 +14,7 @@ Hospital readmission risk depends on more than the current hospitalization. A pa
 
 Admitra therefore uses a history-aware approach. For each hospitalization, the model incorporates information available at or before that encounter, including recent admissions, prior readmissions, time since the previous inpatient admission, clinical burden, utilization, selected chronic conditions, age, BMI, and length of stay.
 
-The Streamlit application converts the model output into:
+The application surfaces:
 
 - a calibrated 30-day readmission probability
 - a Low, Moderate, or High risk level
@@ -22,9 +22,9 @@ The Streamlit application converts the model output into:
 - patient-specific risk drivers
 - a registry for reviewing scored encounters
 
-## Final Production Model
+## Final Model
 
-The production model is an XGBoost binary classifier using **16 features**.
+The final model is an XGBoost binary classifier using **16 features**.
 
 ### Longitudinal Patient History
 
@@ -91,7 +91,7 @@ The mean calibrated predicted probability was **12.04%**, compared with the obse
 
 Class weighting improved identification of readmissions, but the raw XGBoost probabilities were substantially higher than the observed event rate. Admitra therefore includes a separate probability-calibration stage.
 
-The production pipeline uses **sigmoid calibration** to transform the model's raw score into a more interpretable estimated probability while preserving ranking performance.
+The final pipeline uses **sigmoid calibration** to transform the model's raw score into a more interpretable estimated probability while preserving ranking performance.
 
 On the held-out validation population:
 
@@ -100,7 +100,7 @@ Observed readmission rate:    13.19%
 Mean calibrated probability:  12.04%
 ```
 
-This distinction is important: the raw XGBoost output is not presented directly to the user as the estimated clinical risk.
+The raw XGBoost output is not presented directly to the user as the estimated readmission risk.
 
 ## Operating Threshold
 
@@ -108,7 +108,7 @@ A 50% cutoff is not automatically appropriate for an imbalanced classification p
 
 Admitra selects an operational review threshold from grouped out-of-fold training predictions. The selection objective was to maximize F1 while maintaining recall of at least 70%.
 
-The resulting production review threshold is:
+The resulting review threshold is:
 
 ```text
 22%
@@ -138,7 +138,7 @@ The independent review threshold is **22%**.
 
 This allows the application to communicate estimated risk while separately representing the point at which an operational workflow would flag an encounter for additional review.
 
-## Explainable Predictions
+## Prediction Explanations
 
 Admitra uses **SHAP values** to explain individual predictions.
 
@@ -165,9 +165,9 @@ The registry supports:
 - identifying encounters that exceed the review threshold
 - reviewing risk categories
 - comparing predictions with observed outcomes
-- population-level dashboard analysis
+- population-level analysis
 
-The current production registry contains **11,225 scored hospitalizations**.
+The current registry contains **11,225 scored hospitalizations**.
 
 ## Larger-Cohort Robustness Experiment
 
@@ -185,12 +185,12 @@ Using the same 16-feature architecture, performance was:
 
 | Cohort | ROC-AUC | PR-AUC |
 | --- | ---: | ---: |
-| Production development cohort | **0.932** | **0.754** |
+| Development cohort | **0.932** | **0.754** |
 | Larger independent synthetic cohort | **0.883** | **0.549** |
 
-The decrease is an important limitation. Performance on one generated population did not transfer perfectly to another synthetic population.
+Performance decreased on the larger independently generated population, indicating that results from one synthetic population did not transfer perfectly to another.
 
-The larger-cohort model was therefore retained as a robustness experiment rather than used to replace the production model.
+The larger-cohort model was retained as a robustness experiment rather than used to replace the final model.
 
 ## Additional Feature Experiments
 
@@ -203,15 +203,19 @@ An 18-feature experiment added ischemic heart disease and kidney failure to the 
 | 16-feature large-cohort model | 0.8828 | 0.5494 |
 | 18-feature large-cohort model | 0.8827 | 0.5501 |
 
-The added diagnoses produced essentially no improvement, so they were excluded from the final production feature set.
+The added diagnoses produced essentially no improvement, so they were excluded from the final feature set.
 
 ## Streamlit Application
 
 Admitra is presented through an interactive Streamlit interface with three primary views.
 
-### Command Center
+### Operations Console
 
-Provides a population-level view of the patient registry and summarizes risk distribution and review recommendations.
+Provides a population-level view of scored encounters, risk distribution, observed outcomes, and the current review queue.
+
+### Patient Workup
+
+Provides a patient-level view of encounter history, modeled risk, utilization patterns, and the factors contributing to the current prediction.
 
 ### Risk Assessment
 
@@ -222,11 +226,9 @@ Allows a user to enter patient characteristics and utilization history and recei
 - review recommendation
 - patient-specific risk drivers
 
-### Patient Registry
-
-Provides encounter-level access to scored patients and their model outputs.
-
 ## Project Structure
+
+The application is separated into interface, service, configuration, and modeling layers.
 
 ```text
 hospital-operations-intel/
@@ -234,7 +236,27 @@ hospital-operations-intel/
 |-- app.py
 |-- README.md
 |-- requirements.txt
-|-- .gitignore
+|-- requirements-dev.txt
+|-- pytest.ini
+|
+|-- config/
+|   |-- __init__.py
+|   `-- constants.py
+|
+|-- services/
+|   |-- __init__.py
+|   `-- registry.py
+|
+|-- ui/
+|   |-- __init__.py
+|   |-- components.py
+|   `-- styles.py
+|
+|-- views/
+|   |-- __init__.py
+|   |-- operations.py
+|   |-- patient_workup.py
+|   `-- risk_assessment.py
 |
 |-- data/
 |   `-- processed/
@@ -264,6 +286,12 @@ hospital-operations-intel/
 |   |-- predict_readmission.py
 |   |-- train_history_model.py
 |   `-- validate_history_model.py
+|
+|-- tests/
+|   |-- conftest.py
+|   |-- test_app_navigation.py
+|   |-- test_prediction.py
+|   `-- test_registry.py
 |
 `-- experiments/
     `-- experimental and previous model-development scripts
@@ -301,28 +329,15 @@ python -m streamlit run app.py
 
 Streamlit will provide a local address for opening the application in a browser.
 
-## Technology
-
-- Python
-- Pandas
-- XGBoost
-- scikit-learn
-- SHAP
-- Streamlit
-- Synthea
-- Joblib
-
 ## Data
 
 Admitra uses synthetic electronic health record data generated with **Synthea**.
 
-Synthetic data makes it possible to demonstrate an end-to-end healthcare machine learning workflow without using real patient records or protected health information.
-
-The synthetic nature of the data is also a major limitation. Relationships learned from Synthea should not be assumed to represent relationships in real clinical populations.
+Using synthetic data avoids the use of real patient records or protected health information, but it also limits what can be concluded from the model's performance. Relationships learned from Synthea should not be assumed to represent relationships in real clinical populations.
 
 ## Limitations
 
-Admitra is an experimental machine learning project, not a validated clinical prediction system.
+Admitra is an experimental machine learning system, not a validated clinical prediction system.
 
 Key limitations include:
 
@@ -336,24 +351,6 @@ Key limitations include:
 
 Real-world deployment would require external validation, prospective testing, clinical review, fairness assessment, privacy and security controls, governance, ongoing monitoring, and any applicable regulatory review.
 
-## Development Workflow
-
-The project evolved through a sequence of increasingly rigorous modeling steps:
-
-1. Built encounter-level 30-day readmission labels.
-2. Integrated clinical and observation data.
-3. Engineered longitudinal patient-history features.
-4. Prevented patient leakage with grouped train/test splitting.
-5. Addressed class imbalance during model training.
-6. Calibrated raw model probabilities.
-7. Selected an operating threshold using grouped out-of-fold predictions.
-8. Validated model behavior across patient-history groups.
-9. Added patient-specific SHAP explanations.
-10. Built a scored patient registry and Streamlit interface.
-11. Tested additional clinical variables.
-12. Tested the architecture on a larger independently generated synthetic population.
-13. Retained unsuccessful or superseded approaches as documented experiments rather than production components.
-
 ## Disclaimer
 
-**For educational, research, and portfolio purposes only. Not for clinical use.**
+**For research and educational use only. Not for clinical use.**
