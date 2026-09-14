@@ -1,0 +1,13 @@
+[
+  "age_at_admission",
+  "length_of_stay",
+  "previous_inpatient_admissions",
+  "previous_encounters",
+  "condition_count",
+  "medication_count",
+  "procedure_count",
+  "diabetes",
+  "hypertension",
+  "kidney_disease",
+  "bmi"
+]

@@ -1,0 +1,13 @@
+{
+  "age_at_admission": 55.0,
+  "length_of_stay": 3.370833333333333,
+  "previous_inpatient_admissions": 1.0,
+  "previous_encounters": 39.0,
+  "condition_count": 22.0,
+  "medication_count": 7.0,
+  "procedure_count": 32.0,
+  "diabetes": 1.0,
+  "hypertension": 0.0,
+  "kidney_disease": 0.0,
+  "bmi": 28.1
+}

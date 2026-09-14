@@ -7,4 +7,4 @@ data/processed/synthea_filtered_observations.csv
 data/processed/experiments/
 
 # Experimental model artifacts
-models/experiments/
+models/experiments/git status

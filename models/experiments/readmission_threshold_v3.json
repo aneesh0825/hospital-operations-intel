@@ -1,0 +1,4 @@
+{
+  "production_threshold": 0.25000000000000006,
+  "selection_rule": "Highest OOF F1 with recall >= 0.70"
+}

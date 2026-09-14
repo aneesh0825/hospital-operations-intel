@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+from collections.abc import Mapping
 
 import joblib
 import numpy as np
@@ -175,10 +176,7 @@ FEATURE_DISPLAY_NAMES = {
 # INPUT PREPARATION
 # ============================================================
 
-def _safe_value(
-    patient_data,
-    feature,
-):
+def _safe_value(patient_data: Mapping[str, object], feature: str) -> object:
 
     if feature in patient_data:
 
@@ -186,16 +184,8 @@ def _safe_value(
             feature
         ]
 
-        if value is not None:
-
-            try:
-                if not pd.isna(
-                    value
-                ):
-                    return value
-
-            except Exception:
-                return value
+        if value is not None and pd.api.types.is_scalar(value) and not pd.isna(value):
+            return value
 
 
     return MEDIANS.get(
@@ -204,9 +194,7 @@ def _safe_value(
     )
 
 
-def _prepare_patient(
-    patient_data,
-):
+def _prepare_patient(patient_data: Mapping[str, object]) -> tuple[pd.DataFrame, dict[str, object]]:
 
     row = {}
 
@@ -434,9 +422,10 @@ def _risk_level(
 # PREDICTION
 # ============================================================
 
-def predict_readmission(
-    patient_data,
-):
+def predict_readmission(patient_data: Mapping[str, object]) -> dict[str, object]:
+    """Score a mapping of production-model inputs using the calibrated model."""
+    if not isinstance(patient_data, Mapping):
+        raise TypeError("patient_data must be a mapping of feature names to scalar values.")
 
     patient_df, normalized = (
         _prepare_patient(

@@ -1,0 +1,18 @@
+[
+  "age_at_admission",
+  "length_of_stay",
+  "previous_inpatient_admissions",
+  "admissions_last_30_days",
+  "admissions_last_90_days",
+  "admissions_last_365_days",
+  "days_since_last_inpatient_admission",
+  "has_prior_inpatient_admission",
+  "prior_readmissions_last_365_days",
+  "condition_count",
+  "medication_count",
+  "procedure_count",
+  "diabetes",
+  "hypertension",
+  "kidney_disease",
+  "bmi"
+]
